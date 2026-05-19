@@ -3,7 +3,7 @@ from app.domain.models.EstadoTecnico import EstadoTecnico
 
 
 class Tecnico:
-    def __init__(self, estado: EstadoTecnico, equipo_asignado: Equipo, acum_recepcion: float, acum_reparacion: float):
+    def __init__(self, estado: EstadoTecnico, equipo_asignado: Equipo|None, acum_recepcion: float, acum_reparacion: float):
         self.estado: EstadoTecnico = estado
         self.equipo_asignado = equipo_asignado
         self.acum_recepcion: float = acum_recepcion # representa tiempo en decimal de minutos, debe convertirse a minutos para el reporte final
