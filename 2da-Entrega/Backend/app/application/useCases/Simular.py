@@ -3,12 +3,13 @@ import random
 
 from app.domain.models.Cliente import Cliente
 from app.domain.models.ColaFIFO import ColaFIFO
-from app.domain.models.Equipo import Equipo
 from app.domain.models.EstadoCliente import EstadoCliente
-from app.domain.models.EstadoEquipo import EstadoEquipo
-from app.domain.models.Evento import Evento
+from app.domain.models.event.AbreTienda import AbreTienda
+from app.domain.models.event.Evento import Evento
 from app.domain.models.Tecnico import Tecnico
 from app.domain.models.EstadoTecnico import EstadoTecnico
+from app.domain.models.event.LlegaCliente import LlegaCliente
+
 
 class Simular:
     def __init__(self, x_tiempo: float, i_iteraciones: int, j_hora_inicio: float = 600): #600 == 10:00 AM
@@ -24,127 +25,26 @@ class Simular:
         self.media_reparacion: float = 90 # representa el tiempo de media en minutos para reparar un equipo
 
 
+        self.presupuesto: str = ''
+        self.rnd_reparacion: float = 0
+        self.rnd_presupuesto: float = 0
+        self.rnd_llegada: float = 0
+        self.rnd_atencion: float = 0
+        self.rnd_acepta: float = 0
+        self.hora_proxima_llegada: float = 0
+        self.hora_actual: float = 0
+        self.tiempo_hasta_proxima_llegada: float|None = None
+        self.tiempo_hasta_fin_de_atencion: float|None = None
+        self.tiempo_hasta_reparacion: float|None = None
+        self.acepto: bool | None = None
 
-    def ejecutar_simulacion(self):
-        presupuesto: str
-        continua: bool
-        rnd_reparacion: float
-        rnd_llegada: float
-        hora_proxima_llegada: float
-        tiempo_hasta_proxima_llegada: float|None
-        tiempo_hasta_fin_de_atencion: float|None
-        tiempo_hasta_reparacion: float|None
-
-        evento: Evento
-        proximo_evento: Evento
-        tecnico: Tecnico
-        cola_equipos: ColaFIFO
-        cola_clientes: ColaFIFO
-
-        cola_equipos = ColaFIFO()
-        cola_clientes = ColaFIFO()
-
-        # generación de la fila 0 de la tabla de simulación
-        hora_actual: float = self.j_hora_inicio
-
-        evento = Evento.ABRE_TIENDA #TODO REVISAR LO DE ABRE TIENDA
-
-        tecnico = Tecnico(estado= EstadoTecnico.LIBRE, equipo_asignado=None, acum_recepcion=0, acum_reparacion=0)
-
-        rnd_llegada = random.random() # se genera un número uniforme entre 0 y 0.99
-
-        tiempo_hasta_proxima_llegada = self.exponencial_negativa(self.media_llegada, rnd_llegada)
-
-        hora_proxima_llegada = hora_actual + tiempo_hasta_proxima_llegada
-        # fin generación de la fila 0 de la tabla de simulación
-
-        cola_clientes.agregar(Cliente(EstadoCliente.EN_COLA, hora_proxima_llegada, None, None))
-
-        #TODO guardar la informacion de la fila 1 de alguna forma para enviarla al front
-
-        evento = Evento.LLEGA_CLIENTE
-
-
-        for i in range(self.i_iteraciones):
-            if hora_actual < self.hora_final:
-
-                if cola_clientes.cantidad() > 0: # si hay clientes en la cola, entonces los atiendo
-                    tecnico.estado = EstadoTecnico.ATENDIENDO_CLIENTE
-                    if evento == Evento.LLEGA_CLIENTE:
-                        hora_actual += tiempo_hasta_proxima_llegada #TODO REVISAR ESTO, PRIMERO DEBERÍA REVISAR SI EL PROXIMO EVENTO ES UNA LLEGADA DE CLIENTE U OTRA COSA, DE MOMENTO ASUMO QUE ES LA LLEGADA DE CLIENTE
-
-                        # si ya llegó un cliente, debo calcular cuando llega el próximo
-                        # se calcula la próxima llegada de un cliente
-                        rnd_llegada = random.random()
-                        tiempo_hasta_proxima_llegada = self.exponencial_negativa(self.media_llegada, rnd_llegada)
-                        hora_proxima_llegada = hora_actual + tiempo_hasta_proxima_llegada
-
-
-                        # se calcula el tiempo de atencion al cliente actual
-                        #TODO REVISAR ACÁ, PRIMERO DEBERÍA VER SI NO SE ESTÁ ATENDIENDO A UN CLIENTE ACTUALEMENTE
-                        tiempo_hasta_fin_de_atencion = self.uniforme(random.random(), self.min_atencion, self.max_atencion)
-
-
-
-
-                        # asumo el fin de atencion antes de que llegue el proximo cliente
-                        evento = evento.FIN_ATENCION_CL
-
-                        # si el proximo cliente llega antes del fin de atención, entonces corrijo el evento a LLEGA_CLIENTE, sino, dejo como estaba
-                        if tiempo_hasta_proxima_llegada:
-                            if tiempo_hasta_fin_de_atencion > tiempo_hasta_proxima_llegada:
-                                evento= evento.LLEGA_CLIENTE
-
-                    elif evento == Evento.FIN_ATENCION_CL:
-                        hora_actual += tiempo_hasta_fin_de_atencion
-
-                        # se calcula si el cliente acepta la reparación o no
-                        rnd_presupuesto = random.random()
-                        presupuesto = "Normal"
-                        tiempo_hasta_reparacion = None
-                        acepto = True
-                        if rnd_presupuesto < 0.3:
-                            presupuesto = "Elevado"
-                            rnd_acepta = random.random()
-                            if rnd_acepta < 0.5:
-                                acepto = False
-
-                        if acepto: #TODO MOVER ESTO, SE CALCULA CUANTO SE TARDA EN LA REPARACION CUANDO EMPEZAMOS A REPARAR, NO ANTES
-                            # si llego hasta acá es porque su presupuesto no era elevado, o era elevado, pero
-                            # aceptó la reparación, entonces se asigna el cliente al técnico
-
-                            rnd_reparacion = random.random()
-                            tiempo_hasta_reparacion = self.exponencial_negativa(self.media_reparacion, rnd_reparacion)
-
-                            nuevo_equipo = Equipo(EstadoEquipo.EN_COLA_REPARACION, hora_actual, None,
-                                                  None, tiempo_hasta_reparacion, 0)
-
-                            cola_equipos.agregar(nuevo_equipo)
-
-                        cola_clientes.retirar()
-
-                    elif evento == evento.FIN_REPARACION_CL:
-                        pass
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        self.evento: Evento|None = None
+        self.tecnico: Tecnico| None = None
+        self.cola_equipos: ColaFIFO|None = None
+        self.cola_clientes: ColaFIFO|None = None
 
     @staticmethod
-    def exponencial_negativa(media:float, rnd: float) -> float:
+    def exponencial_negativa(media: float, rnd: float) -> float:
         return -media * (math.log(1 - rnd))
 
     @staticmethod
@@ -160,3 +60,49 @@ class Simular:
         segundos = total_segundos % 60
 
         return f"{horas:02d}:{minutos_restantes:02d}:{segundos:02d}"
+
+    def ejecutar_simulacion(self):
+
+        self.cola_equipos = ColaFIFO()
+        self.cola_clientes = ColaFIFO()
+
+        # generación de la fila 0 de la tabla de simulación
+        self.hora_actual = self.j_hora_inicio
+
+        self.evento = AbreTienda() #TODO REVISAR LO DE ABRE TIENDA
+
+        self.tecnico = Tecnico(estado= EstadoTecnico.LIBRE, equipo_asignado=None, acum_recepcion=0, acum_reparacion=0)
+
+        self.rnd_llegada = random.random() # se genera un número uniforme entre 0 y 0.99
+
+        self.tiempo_hasta_proxima_llegada = self.exponencial_negativa(self.media_llegada, self.rnd_llegada)
+
+        self.hora_proxima_llegada = self.hora_actual + self.tiempo_hasta_proxima_llegada
+        # fin generación de la fila 0 de la tabla de simulación
+
+        self.cola_clientes.agregar(Cliente(EstadoCliente.EN_COLA, self.hora_proxima_llegada, None, None))
+
+        #TODO guardar la información de la fila 1 en la BDD
+
+        self.evento = LlegaCliente()
+
+
+        for i in range(self.i_iteraciones):
+            if self.hora_actual < self.hora_final:
+                self.tecnico.estado = EstadoTecnico.ATENDIENDO_CLIENTE # TODO, ESTO SIN DUDAS NO VA ACÁ, DEBERÍA IR EN CADA EVENTO, POR AHORA LO DEJO ACÁ PARA HACER RÁPIDO.
+                self.evento.ejecutar_accion(self)
+                #TODO CAPAZ ACÁ DEBERÍA IR LO DE GUARDAR LA FILA EN LA BDD, NO LO TENGO DEL TODO CLARO, DEBERÍA EMPEZAR A PROBAR COMO FUNCIONA ESTO
+                # SEGURO VIENDO EL RESULTADO QUE SE PRINTEA Y COMPARANDO CON EL EXCEL YA ME QUEDA MÁS CLARO
+
+
+                #todo ------------------------------------ TODO ----------------------------
+                #TODO CREAR ALGÚN MÉTODO QUE EJECUTE LA SIMULACIÓN CON PARÁMETROS HARDCODEADOS O INGRESADOS POR CONSOLA Y
+                # DESPUÉS PRINTEÉ POR CONSOLA EL RESULTADO, ESTO CON LA FINALIDAD DE PROBAR QUE LA SIMULACIÓN FUNCIONA BIEN,
+                # Y QUE LOS RESULTADOS QUE SE OBTIENEN SON LOS ESPERADOS, COMPARANDO CON EL EXCEL DE PRUEBA QUE HICIMOS EN LA PRIMERA ENTREGA
+
+
+
+
+
+
+

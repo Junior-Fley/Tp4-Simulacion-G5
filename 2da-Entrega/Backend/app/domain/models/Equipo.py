@@ -3,7 +3,7 @@ from datetime import datetime
 
 class Equipo:
     def __init__(self, estado: EstadoEquipo, hora_ingreso_taller:float, horario_inicio_reparacion: float|None,
-                 horario_fin_reparacion: float|None, tiempo_de_reparacion: float, tiempo_acumulado_reparacion: float):
+                 horario_fin_reparacion: float|None, tiempo_de_reparacion: float| None, tiempo_acumulado_reparacion: float):
         self.estado: EstadoEquipo = estado
         self.hora_ingreso_taller: float= hora_ingreso_taller
         self.horario_inicio_reparacion: float = horario_inicio_reparacion
