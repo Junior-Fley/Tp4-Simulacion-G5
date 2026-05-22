@@ -4,7 +4,6 @@ import random
 from app.domain.models.Cliente import Cliente
 from app.domain.models.ColaFIFO import ColaFIFO
 from app.domain.models.EstadoCliente import EstadoCliente
-from app.domain.models.event.AbreTienda import AbreTienda
 from app.domain.models.event.Evento import Evento
 from app.domain.models.Tecnico import Tecnico
 from app.domain.models.EstadoTecnico import EstadoTecnico

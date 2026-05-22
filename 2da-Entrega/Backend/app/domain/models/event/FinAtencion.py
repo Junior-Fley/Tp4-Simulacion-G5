@@ -24,7 +24,7 @@ class FinAtencion(Evento):
         simulacion.rnd_presupuesto = random.random()
         simulacion.presupuesto = "Normal"
         simulacion.tiempo_hasta_reparacion = None
-        simulacion.acepto = True # TODO revisar si esto hace falta mostrarlo en la fila de la simulacion o no, de momento asumí que no, más que nada porque me daba pereza fijarme
+        simulacion.acepto = True
         if simulacion.rnd_presupuesto < 0.3:
             simulacion.presupuesto = "Elevado"
             simulacion.rnd_acepta = random.random()
@@ -32,14 +32,13 @@ class FinAtencion(Evento):
                 simulacion.acepto = False
 
 
-        if simulacion.acepto:  # TODO MOVER ESTO, SE CALCULA CUANTO SE TARDA EN LA REPARACIÓN CUANDO EMPEZAMOS A REPARAR, NO ANTES
+        if simulacion.acepto:
             # si llego hasta acá es porque su presupuesto no era elevado, o era elevado, pero
             # aceptó la reparación, entonces se asigna el cliente al técnico
             nuevo_equipo = Equipo(EstadoEquipo.EN_COLA_REPARACION, simulacion.hora_actual, None,
                                   None, None, 0)
 
             simulacion.cola_equipos.agregar(nuevo_equipo)
-
 
 
         # ahora queda calcular cuál es el próximo evento a ejecutar
@@ -53,9 +52,9 @@ class FinAtencion(Evento):
 
 
             if simulacion.tiempo_hasta_fin_de_atencion < simulacion.tiempo_hasta_proxima_llegada:
-                simulacion.evento = FinAtencion()
+                simulacion.proximo_evento = FinAtencion()
             else:
-                simulacion.evento = LlegaCliente()
+                simulacion.proximo_evento = LlegaCliente()
         else:
             # si no hay clientes en la cola, entonces el próximo evento puede ser la llegada de un nuevo cliente o la reparación de un equipo
             # de cualquier forma, si no hay clientes en la cola, entonces debo empezar a reparar el primer equipo de la cola,
@@ -83,17 +82,13 @@ class FinAtencion(Evento):
 
 
                 if simulacion.tiempo_hasta_reparacion < simulacion.tiempo_hasta_proxima_llegada:
-                    simulacion.evento = FinReparacion()
+                    simulacion.proximo_evento = FinReparacion()
                     # si el evento es un fin de reparación entonces efectivamente se terminó con la reparación actual, así que no debo devolver el equipo a la cola
                 else:
-                    simulacion.evento = LlegaCliente()
+                    simulacion.proximo_evento = LlegaCliente()
                     # si el evento es que llega un cliente, entonces se interrumpe la reparación del equipo, por lo cual debo devolver
                     # el equipo a la cola, pero con el tiempo de reparación actualizado, para que cuando vuelva a salir el equipo de la cola, sepa cuánto tiempo le falta para ser reparado
 
                     primer_equipo.tiempo_reparacion_restante = primer_equipo.tiempo_reparacion_restante - simulacion.tiempo_hasta_proxima_llegada
 
                     simulacion.cola_equipos.modificar_primero(primer_equipo)
-
-                # TODO CREO QUE ACÁ VA LO DE GUARDAR LA FILA A LA BDD PERO NO LO TENGO CLARO, CAPAZ LO DE GUARDAR LA FILA A LA BDD SE PUEDE MOVER DE ALGUNA FORMA AL MÉTODO EJECUTAR SIMULACIÓN
-                # todo YA QUE ES EN PARTE ALGO COMÚN A TODOS LOS MÉTODOS DE CADA ESTADO... DEBERÍA REVISARLO BIEN LA VERDAD,
-                # todo POR AHORA LO DEJO ACÁ MARCADO CON UN TODO, Y QUEDA EL TRABAJO PARA MI YO DEL FUTURO O PARA EL PRÓXIMO QUE TOQUE EL BACKEND
