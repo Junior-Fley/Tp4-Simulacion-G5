@@ -21,6 +21,13 @@ class ColaFIFO:
 
         return self.elementos[0]
 
+    def modificar_primero(self, nuevo_elemento):
+        if self.esta_vacia():
+            return None
+
+        self.elementos[0] = nuevo_elemento
+        return self.elementos[0]
+
     def esta_vacia(self):
         return len(self.elementos) == 0
 
