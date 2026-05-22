@@ -62,7 +62,7 @@ class FinAtencion(Evento):
             # así que debo calcular el tiempo de reparación del equipo, y luego comparar si el próximo evento es la llegada de un nuevo cliente o la reparación del equipo
             if simulacion.cola_equipos.cantidad() > 0:
                 # si hay equipos en la cola, entonces debo calcular el tiempo de reparación del primer equipo de la cola, si este tiempo no fue calculado antes, es decir, si se está trabajando por primera vez con ese equipo
-                primer_equipo: Equipo = simulacion.cola_equipos.retirar()
+                primer_equipo: Equipo = simulacion.cola_equipos.primero()
 
                 if primer_equipo.tiempo_de_reparacion is None:
 
@@ -92,7 +92,7 @@ class FinAtencion(Evento):
 
                     primer_equipo.tiempo_reparacion_restante = primer_equipo.tiempo_reparacion_restante - simulacion.tiempo_hasta_proxima_llegada
 
-                    simulacion.cola_equipos.agregar(primer_equipo)
+                    simulacion.cola_equipos.modificar_primero(primer_equipo)
 
                 # TODO CREO QUE ACÁ VA LO DE GUARDAR LA FILA A LA BDD PERO NO LO TENGO CLARO, CAPAZ LO DE GUARDAR LA FILA A LA BDD SE PUEDE MOVER DE ALGUNA FORMA AL MÉTODO EJECUTAR SIMULACIÓN
                 # todo YA QUE ES EN PARTE ALGO COMÚN A TODOS LOS MÉTODOS DE CADA ESTADO... DEBERÍA REVISARLO BIEN LA VERDAD,
