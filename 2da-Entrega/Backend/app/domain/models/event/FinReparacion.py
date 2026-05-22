@@ -1,5 +1,6 @@
 import random
 
+from app.domain.models.Equipo import Equipo
 from app.domain.models.EstadoTecnico import EstadoTecnico
 from app.domain.models.event.Evento import Evento
 from typing import TYPE_CHECKING
@@ -42,6 +43,20 @@ class FinReparacion(Evento):
         else:
             # si no hay clientes en la cola, entonces el próximo evento puede ser la llegada de un nuevo cliente o la reparación de un equipo
             if simulacion.cola_equipos.cantidad() > 0: # si hay equipos en la cola, entonces el próximo evento puede ser la reparación de un equipo o la llegada de un nuevo cliente
+
+                primer_equipo: Equipo = simulacion.cola_equipos.primero()
+
+                if primer_equipo.tiempo_de_reparacion is None:
+                    # es la primera vez que se trabaja con este equipo, debo calcular cuanto va a tardar en repararse
+
+                    simulacion.rnd_reparacion = random.random()
+                    simulacion.tiempo_hasta_reparacion = simulacion.exponencial_negativa(simulacion.media_reparacion,
+                                                                                         simulacion.rnd_reparacion)
+
+                    # le asigno al primer equipo el tiempo de reparación que acabo de calcular
+                    primer_equipo.tiempo_de_reparacion = simulacion.tiempo_hasta_reparacion
+                    primer_equipo.tiempo_reparacion_restante = simulacion.tiempo_hasta_reparacion
+
                 if simulacion.cola_equipos.primero().tiempo_reparacion_restante < simulacion.tiempo_hasta_proxima_llegada:
                     simulacion.proximo_evento = FinReparacion()
                 else:
