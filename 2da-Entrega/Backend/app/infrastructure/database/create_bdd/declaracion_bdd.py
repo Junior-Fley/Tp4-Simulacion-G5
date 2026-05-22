@@ -1,5 +1,6 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float
+from sqlalchemy import Column, Integer, String, Float, Boolean
 from sqlalchemy.orm import declarative_base
+
 
 Base = declarative_base()
 
@@ -7,25 +8,25 @@ class Simulacion(Base):
     __tablename__ = 'simulacion'
 
     id = Column(Integer, primary_key=True)
-    horario = Column(Float)
+    horario = Column(String)
     evento = Column(String)
     rnd_llegada = Column(Float)
-    tiempo_entre_llegadas = Column(Float)
-    proxima_llegada = Column(Float)
+    tiempo_entre_llegadas = Column(String)
+    proxima_llegada = Column(String)
     estado_tecnico = Column(String)
     rnd_atencion = Column(Float)
-    tiempo_de_atencion = Column(Float)
-    proximo_fin_atencion = Column(Float)
+    tiempo_de_atencion = Column(String)
+    proximo_fin_atencion = Column(String)
     rnd_presupuesto = Column(Float)
     presupuesto = Column(String)
     rnd_deja_equipo = Column(Float)
-    deja_equipo = Column(String)
+    deja_equipo = Column(Boolean)
     rnd_reparacion = Column(Float)
-    duracion_reparacion = Column(Float)
+    duracion_reparacion = Column(String)
     fila_clientes = Column(Integer)
     fila_equipos = Column(Integer)
-    tiempo_de_atencion_total = Column(Float)
-    tiempo_de_reparacion_total = Column(Float)
+    tiempo_de_atencion_total = Column(String)
+    tiempo_de_reparacion_total = Column(String)
     clientes_no_atendidos = Column(Integer)
 
 
