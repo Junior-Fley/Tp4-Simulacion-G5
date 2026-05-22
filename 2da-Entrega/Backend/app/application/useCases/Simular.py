@@ -33,15 +33,16 @@ class Simular:
         self.rnd_acepta: float = 0
         self.hora_proxima_llegada: float = 0
         self.hora_actual: float = 0
-        self.tiempo_hasta_proxima_llegada: float|None = None
-        self.tiempo_hasta_fin_de_atencion: float|None = None
-        self.tiempo_hasta_reparacion: float|None = None
+        self.tiempo_hasta_proxima_llegada: float= 0
+        self.tiempo_hasta_fin_de_atencion: float= 0
+        self.tiempo_hasta_reparacion: float= 0
         self.acepto: bool | None = None
 
-        self.evento: Evento|None = None
+        self.evento: Evento | None = None
+        self.proximo_evento: Evento|None = None
         self.tecnico: Tecnico| None = None
-        self.cola_equipos: ColaFIFO|None = None
-        self.cola_clientes: ColaFIFO|None = None
+        self.cola_equipos: ColaFIFO = ColaFIFO()
+        self.cola_clientes: ColaFIFO = ColaFIFO()
 
     @staticmethod
     def exponencial_negativa(media: float, rnd: float) -> float:
@@ -69,8 +70,6 @@ class Simular:
         # generación de la fila 0 de la tabla de simulación
         self.hora_actual = self.j_hora_inicio
 
-        self.evento = AbreTienda() #TODO REVISAR LO DE ABRE TIENDA
-
         self.tecnico = Tecnico(estado= EstadoTecnico.LIBRE, equipo_asignado=None, acum_recepcion=0, acum_reparacion=0)
 
         self.rnd_llegada = random.random() # se genera un número uniforme entre 0 y 0.99
@@ -89,11 +88,12 @@ class Simular:
 
         for i in range(self.i_iteraciones):
             if self.hora_actual < self.hora_final:
-                self.tecnico.estado = EstadoTecnico.ATENDIENDO_CLIENTE # TODO, ESTO SIN DUDAS NO VA ACÁ, DEBERÍA IR EN CADA EVENTO, POR AHORA LO DEJO ACÁ PARA HACER RÁPIDO.
                 self.evento.ejecutar_accion(self)
-                #TODO CAPAZ ACÁ DEBERÍA IR LO DE GUARDAR LA FILA EN LA BDD, NO LO TENGO DEL TODO CLARO, DEBERÍA EMPEZAR A PROBAR COMO FUNCIONA ESTO
-                # SEGURO VIENDO EL RESULTADO QUE SE PRINTEA Y COMPARANDO CON EL EXCEL YA ME QUEDA MÁS CLARO
 
+                # TODO CAPAZ ACÁ DEBERÍA IR LO DE GUARDAR LA FILA EN LA BDD, NO LO TENGO DEL TODO CLARO, DEBERÍA EMPEZAR A PROBAR COMO FUNCIONA ESTO
+                #  SEGURO VIENDO EL RESULTADO QUE SE PRINTEA Y COMPARANDO CON EL EXCEL YA ME QUEDA MÁS CLARO
+
+                self.evento = self.proximo_evento
 
                 #todo ------------------------------------ TODO ----------------------------
                 #TODO CREAR ALGÚN MÉTODO QUE EJECUTE LA SIMULACIÓN CON PARÁMETROS HARDCODEADOS O INGRESADOS POR CONSOLA Y

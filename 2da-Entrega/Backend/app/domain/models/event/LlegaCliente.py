@@ -36,20 +36,16 @@ class LlegaCliente(Evento):
         # si no es el primero, entonces no le calculo el tiempo de atención, porque no se va a atender hasta que se atienda a los clientes que están antes que él en la cola,
         # entonces no hace falta calcular el tiempo de atención para este cliente ahora, porque se sigue trabajando con el tiempo de atención del cliente actual
 
-        # TODO acá debería guardar la información de la fila generada a la BDD. FALTA IMPLEMENTAR LA BDD.
-
-        # TODO, acá podría haber implementado la interfaz de la BDD y llamar al método para guardar la fila, pero la verdad que no tengo ganas de hacer la interfaz sin la BDD
-        # TODO así que por ahora dejo esto marcado con un TODO, y queda el trabajo para mi yo del futuro
-
         #------------------------------------------ fin generación de la fila de la simulación ------------------------------------------
         # para este punto ya se generó toda la fila de la simulación, entonces ahora se debe decidir cuál va a ser el próximo evento que se va a ejecutar
-
 
 
         # asumo que llega el proximo cliente antes del fin de la atención, entonces no hace falta cambiar el evento de la simulación (sigue siendo LLegaCliente)
         # si finaliza la atención antes de la llegada del próximo cliente entonces cambio el evento de la simulación a FinAtención
         if simulacion.tiempo_hasta_fin_de_atencion < simulacion.tiempo_hasta_proxima_llegada:
-            simulacion.evento = FinAtencion()
+            simulacion.proximo_evento = FinAtencion()
+        else:
+            simulacion.proximo_evento = LlegaCliente()
             # No hace falta revisar si es que el siguiente evento es reparación, pues si acaba de llegar un cliente, lo debo atender si o si
             # excepto que ya este atendiendo a otro cliente, por lo cual solo debo revisar si la proxima acción es el fin de atencion del cliente actual
             # lo que implica que paso a atender a este cliente, o si, en cambio, es la llegada de otro cliente, lo que implica que sigo atendiendo al cliente actual, y el nuevo cliente se queda en la cola
