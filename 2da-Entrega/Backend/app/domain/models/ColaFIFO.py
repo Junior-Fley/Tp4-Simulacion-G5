@@ -33,3 +33,6 @@ class ColaFIFO:
 
     def cantidad(self):
         return len(self.elementos)
+
+    def vaciar(self):
+        self.elementos.clear()
