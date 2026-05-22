@@ -44,6 +44,7 @@ class Simular:
         self.evento: Evento | None = None
         self.proximo_evento: Evento|None = None
         self.tecnico: Tecnico| None = None
+        self.cierre: bool = False
         self.cola_equipos: ColaFIFO = ColaFIFO()
         self.cola_clientes: ColaFIFO = ColaFIFO()
 
@@ -153,6 +154,42 @@ class Simular:
                 # DESPUÉS PRINTEÉ POR CONSOLA EL RESULTADO, ESTO CON LA FINALIDAD DE PROBAR QUE LA SIMULACIÓN FUNCIONA BIEN,
                 # Y QUE LOS RESULTADOS QUE SE OBTIENEN SON LOS ESPERADOS, COMPARANDO CON EL EXCEL DE PRUEBA QUE HICIMOS EN LA PRIMERA ENTREGA
 
+
+            else:
+                # Ya no se atienden clientes, sólo se reparar dispositivos
+
+                # Calculo la cantidad de clientes sin atender y vacío la lista
+                if not self.cierre:
+                    self.cierre = True
+                    clientes_hechados = self.cola_clientes.cantidad()
+                    self.cola_clientes.vaciar()
+
+                while self.cola_equipos.cantidad() > 0:
+                    from app.domain.models.event.FinReparacion import FinReparacion
+                    self.evento = FinReparacion()
+
+                    # Ejecuto el evento de reparación de los equipos que quedan en la cola, hasta que se reparen todos
+                    self.evento.ejecutar_accion(self)
+
+                    if self.cola_equipos.cantidad() == 0:
+                        self.repo.guardar_fin_reparacion_no_hay_equipos(self.float_a_hora(self.hora_actual),
+                                                                        self.evento.nombre,
+                                                                        self.float_a_hora(self.hora_proxima_llegada),
+                                                                        self.tecnico.estado.value,
+                                                                        self.cola_clientes.cantidad(),
+                                                                        self.cola_equipos.cantidad(),
+                                                                        self.clientes_no_atendidos, self.cola_clientes,
+                                                                        self.cola_equipos)
+                    elif self.cola_equipos.cantidad() > 0:
+                        self.repo.guardar_fin_reparacion_hay_equipos(self.float_a_hora(self.hora_actual),
+                                                                     self.evento.nombre,
+                                                                     self.float_a_hora(self.hora_proxima_llegada),
+                                                                     self.tecnico.estado.value, self.rnd_reparacion,
+                                                                     self.float_a_hora(self.tiempo_hasta_reparacion),
+                                                                     self.cola_clientes.cantidad(),
+                                                                     self.cola_equipos.cantidad(),
+                                                                     self.clientes_no_atendidos, self.cola_clientes,
+                                                                     self.cola_equipos)
 
 
 
