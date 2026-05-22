@@ -3,7 +3,7 @@
 
   export const VectorEstado = () => {
     const columnas_th = [
-  "#",
+  "i",
   "Hora",
   "Evento",
   "RND Llegada",
