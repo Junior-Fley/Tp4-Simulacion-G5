@@ -2,9 +2,6 @@ import random
 
 from app.domain.models.EstadoTecnico import EstadoTecnico
 from app.domain.models.event.Evento import Evento
-from app.domain.models.event.LlegaCliente import LlegaCliente
-from app.domain.models.event.FinAtencion import FinAtencion
-
 from typing import TYPE_CHECKING
 
 
@@ -37,8 +34,10 @@ class FinReparacion(Evento):
 
 
             if simulacion.tiempo_hasta_fin_de_atencion < simulacion.tiempo_hasta_proxima_llegada:
+                from app.domain.models.event.FinAtencion import FinAtencion
                 simulacion.proximo_evento = FinAtencion()
             else:
+                from app.domain.models.event.LlegaCliente import LlegaCliente
                 simulacion.proximo_evento = LlegaCliente()
         else:
             # si no hay clientes en la cola, entonces el próximo evento puede ser la llegada de un nuevo cliente o la reparación de un equipo
@@ -46,8 +45,10 @@ class FinReparacion(Evento):
                 if simulacion.cola_equipos.primero().tiempo_reparacion_restante < simulacion.tiempo_hasta_proxima_llegada:
                     simulacion.proximo_evento = FinReparacion()
                 else:
+                    from app.domain.models.event.LlegaCliente import LlegaCliente
                     simulacion.proximo_evento = LlegaCliente()
             else:
                 # si no hay clientes ni equipos en la cola, entonces el próximo evento es la llegada de un nuevo cliente
+                from app.domain.models.event.LlegaCliente import LlegaCliente
                 simulacion.proximo_evento = LlegaCliente()
         

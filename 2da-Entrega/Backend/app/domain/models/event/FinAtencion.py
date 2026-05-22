@@ -3,8 +3,7 @@ import random
 from app.domain.models.Equipo import Equipo
 from app.domain.models.EstadoEquipo import EstadoEquipo
 from app.domain.models.event.Evento import Evento
-from app.domain.models.event.FinReparacion import FinReparacion
-from app.domain.models.event.LlegaCliente import LlegaCliente
+
 
 
 from typing import TYPE_CHECKING
@@ -54,6 +53,7 @@ class FinAtencion(Evento):
             if simulacion.tiempo_hasta_fin_de_atencion < simulacion.tiempo_hasta_proxima_llegada:
                 simulacion.proximo_evento = FinAtencion()
             else:
+                from app.domain.models.event.LlegaCliente import LlegaCliente
                 simulacion.proximo_evento = LlegaCliente()
         else:
             # si no hay clientes en la cola, entonces el próximo evento puede ser la llegada de un nuevo cliente o la reparación de un equipo
@@ -82,9 +82,11 @@ class FinAtencion(Evento):
 
 
                 if simulacion.tiempo_hasta_reparacion < simulacion.tiempo_hasta_proxima_llegada:
+                    from app.domain.models.event.FinReparacion import FinReparacion
                     simulacion.proximo_evento = FinReparacion()
                     # si el evento es un fin de reparación entonces efectivamente se terminó con la reparación actual, así que no debo devolver el equipo a la cola
                 else:
+                    from app.domain.models.event.LlegaCliente import LlegaCliente
                     simulacion.proximo_evento = LlegaCliente()
                     # si el evento es que llega un cliente, entonces se interrumpe la reparación del equipo, por lo cual debo devolver
                     # el equipo a la cola, pero con el tiempo de reparación actualizado, para que cuando vuelva a salir el equipo de la cola, sepa cuánto tiempo le falta para ser reparado

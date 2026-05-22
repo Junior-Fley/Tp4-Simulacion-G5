@@ -6,7 +6,7 @@ import random
 
 from typing import TYPE_CHECKING
 
-from app.domain.models.event.FinAtencion import FinAtencion
+
 
 if TYPE_CHECKING:
     from app.application.useCases.Simular import Simular
@@ -43,6 +43,7 @@ class LlegaCliente(Evento):
         # asumo que llega el proximo cliente antes del fin de la atención, entonces no hace falta cambiar el evento de la simulación (sigue siendo LLegaCliente)
         # si finaliza la atención antes de la llegada del próximo cliente entonces cambio el evento de la simulación a FinAtención
         if simulacion.tiempo_hasta_fin_de_atencion < simulacion.tiempo_hasta_proxima_llegada:
+            from app.domain.models.event.FinAtencion import FinAtencion
             simulacion.proximo_evento = FinAtencion()
         else:
             simulacion.proximo_evento = LlegaCliente()
