@@ -114,7 +114,7 @@ class Simular:
 
                     if self.repo_override is not None:
                         uow.simu_repo = self.repo_override
-                    # TODO Las funciones no muestran correctamente los datos
+                    # TODO Las funciones no muestran correctamente los datos correctamente
                     match self.evento.nombre:
                         case "Llega_Cliente":
                             if self.cola_clientes.cantidad() == 1:
