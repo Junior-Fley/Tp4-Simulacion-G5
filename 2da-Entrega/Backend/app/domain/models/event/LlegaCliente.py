@@ -6,7 +6,7 @@ import random
 
 from typing import TYPE_CHECKING
 
-
+from domain.models.EstadoTecnico import EstadoTecnico
 
 if TYPE_CHECKING:
     from app.application.useCases.Simular import Simular
@@ -16,25 +16,26 @@ class LlegaCliente(Evento):
         super().__init__("Llega_Cliente")
 
     def ejecutar_accion(self, simulacion: Simular):
+        # 1 - Actualizo la hora
         simulacion.hora_actual += simulacion.tiempo_hasta_proxima_llegada
 
-        # creo el nuevo cliente que acaba de llegar, lo agrego a la cola de clientes
+        # 2 - Creo el nuevo cliente que acaba de llegar, lo agrego a la cola de clientes
         cliente = Cliente(EstadoCliente.EN_COLA, simulacion.hora_actual, None, None)
         simulacion.cola_clientes.agregar(cliente)
 
-        # si ya llegó un cliente, debo calcular cuando llega el próximo
-        # se calcula la próxima llegada de un cliente
-        simulacion.rnd_llegada = random.random()
+        # 3- Calculo la próxima llegada de un cliente
+        simulacion.rnd_llegada = round(random.random(), 3)
         simulacion.tiempo_hasta_proxima_llegada = simulacion.exponencial_negativa(simulacion.media_llegada, simulacion.rnd_llegada)
         simulacion.hora_proxima_llegada = simulacion.hora_actual + simulacion.tiempo_hasta_proxima_llegada
 
-        # se calcula el tiempo de atencion del cliente si corresponde
+        # 4 - Actualizo el estado del tecnico
+        simulacion.tecnico.estado = EstadoTecnico.ATENDIENDO_CLIENTE
 
-        if simulacion.cola_clientes.primero() == cliente: # si el cliente que acaba de llegar es el primero en la cola, entonces se atiende inmediatamente, se le calcula el tiempo de atención
-            simulacion.rnd_atencion = random.random()
+        # 5 - Se calcula el tiempo de atencion del cliente si no hay nadie delante y no empecé a atenderlo.
+        if simulacion.cola_clientes.primero().estado == EstadoCliente.EN_COLA:
+            simulacion.cola_clientes.primero().estado = EstadoCliente.SIENDO_ATENDIDO
+            simulacion.rnd_atencion = round(random.random(), 3)
             simulacion.tiempo_hasta_fin_de_atencion = simulacion.uniforme(simulacion.rnd_atencion, simulacion.min_atencion, simulacion.max_atencion)
-        # si no es el primero, entonces no le calculo el tiempo de atención, porque no se va a atender hasta que se atienda a los clientes que están antes que él en la cola,
-        # entonces no hace falta calcular el tiempo de atención para este cliente ahora, porque se sigue trabajando con el tiempo de atención del cliente actual
 
         #------------------------------------------ fin generación de la fila de la simulación ------------------------------------------
         # para este punto ya se generó toda la fila de la simulación, entonces ahora se debe decidir cuál va a ser el próximo evento que se va a ejecutar

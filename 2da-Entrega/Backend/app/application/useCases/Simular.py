@@ -78,7 +78,7 @@ class Simular:
 
         self.tecnico = Tecnico(estado= EstadoTecnico.LIBRE, equipo_asignado=None, acum_recepcion=0, acum_reparacion=0)
 
-        self.rnd_llegada = random.random() # se genera un número uniforme entre 0 y 0.99
+        self.rnd_llegada = round(random.random(), 3) # se genera un número uniforme entre 0 y 0.99
 
         self.tiempo_hasta_proxima_llegada = self.exponencial_negativa(self.media_llegada, self.rnd_llegada)
 
@@ -86,8 +86,6 @@ class Simular:
         # fin generación de la fila 0 de la tabla de simulación
 
         self.cola_clientes.agregar(Cliente(EstadoCliente.EN_COLA, self.hora_proxima_llegada, None, None))
-
-        #TODO guardar la información de la fila 1 en la BDD
 
         with self.uow_factory() as uow:
 
@@ -116,7 +114,7 @@ class Simular:
 
                     if self.repo_override is not None:
                         uow.simu_repo = self.repo_override
-
+                    # TODO Las funciones no muestran correctamente los datos
                     match self.evento.nombre:
                         case "Llega_Cliente":
                             if self.cola_clientes.cantidad() == 1:
