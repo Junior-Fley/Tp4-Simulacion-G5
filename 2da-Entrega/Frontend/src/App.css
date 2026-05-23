@@ -1,1 +1,36 @@
-  
+.tabla-container {
+  width: 95%;
+  margin: 20px auto;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 700px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+}
+
+.tabla-vector {
+  text-align: center;
+}
+
+.tabla-vector thead tr {
+  background-color: #04AA6D;
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.tabla-vector th {
+  min-width: 150px;
+  white-space: nowrap;
+  padding: 8px 16px;
+}
+
+.tabla-vector tbody tr {
+  transition: 0.2s;
+  cursor: pointer;
+}
+
+.tabla-vector tbody tr:hover {
+  background-color: #d1f5e0;
+}
