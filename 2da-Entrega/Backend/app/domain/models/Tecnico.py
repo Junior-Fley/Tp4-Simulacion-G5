@@ -3,10 +3,10 @@ from app.domain.models.EstadoTecnico import EstadoTecnico
 
 
 class Tecnico:
-    def __init__(self, estado: EstadoTecnico, equipo_asignado: Equipo|None, acum_recepcion: float, acum_reparacion: float):
+    def __init__(self, estado: EstadoTecnico, equipo_asignado: Equipo|None, acum_atencion: float, acum_reparacion: float):
         self.estado: EstadoTecnico = estado
         self.equipo_asignado = equipo_asignado
-        self.acum_recepcion: float = acum_recepcion # representa tiempo en decimal de minutos, debe convertirse a minutos para el reporte final
+        self.acum_atencion: float = acum_atencion # representa tiempo en decimal de minutos, debe convertirse a minutos para el reporte final
         self.acum_reparacion: float = acum_reparacion # representa tiempo en decimal de minutos, debe convertirse a minutos para el reporte final
 
     @staticmethod
@@ -22,5 +22,5 @@ class Tecnico:
     def obtener_tiempo_acumulado_reparacion(self):
         return self._convertir_minutos_a_mmss(self.acum_reparacion)
 
-    def obtener_tiempo_acumulado_recepcion(self):
-        return self._convertir_minutos_a_mmss(self.acum_recepcion)
+    def obtener_tiempo_acumulado_atencion(self):
+        return self._convertir_minutos_a_mmss(self.acum_atencion)
