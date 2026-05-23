@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 
 from app.domain.models.ColaFIFO import ColaFIFO
-from app.domain.models.EstadoTecnico import EstadoTecnico
-from app.domain.models.event.Evento import Evento
+
 
 
 class ISimulacionRepository(ABC):
@@ -41,6 +40,18 @@ class ISimulacionRepository(ABC):
                           tiempo_atencion_acum, tiempo_reparacion_acum, clientes_no_atendidos_por_cierre,
                           cola_clientes, cola_equipos)
 
+    def guardar_llega_cliente_repara(self, hora: str, evento: str, rnd_llegada: float, tiempo_hasta_llegada: str,
+                                      proxima_llegada: str, estado_tecnico: str, rnd_reparacion: float,
+                                      duracion_reparacion:str, cola_atencion_cantidad: int,
+                                      cola_equipos_cantidad: int, tiempo_atencion_acum, tiempo_reparacion_acum,
+                                      clientes_no_atendidos_por_cierre: int, cola_clientes: ColaFIFO,
+                                      cola_equipos: ColaFIFO) -> None:
+
+        self.guardar_fila(hora, evento, rnd_llegada, tiempo_hasta_llegada, proxima_llegada, estado_tecnico,
+                          -1, '', '', -1, '', -1,
+                          None, rnd_reparacion, duracion_reparacion, cola_atencion_cantidad, cola_equipos_cantidad,
+                          tiempo_atencion_acum, tiempo_reparacion_acum, clientes_no_atendidos_por_cierre,
+                          cola_clientes, cola_equipos)
 
     @abstractmethod
     def guardar_fin_atencion_hay_clientes(self, hora: str, evento: str, hora_proxima_llegada: str, estado_tecnico: str,

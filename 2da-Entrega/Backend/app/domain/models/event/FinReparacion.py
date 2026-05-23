@@ -24,15 +24,20 @@ class FinReparacion(Evento):
 
         # Ahora queda calcular cuál es el próximo evento a ejecutar
 
+        if self.comprobar_hora_final(simulacion):
+            return
+
+
         if simulacion.cola_clientes.cantidad() > 0: # si hay clientes en la cola, entonces el próximo evento puede ser el fin de atención del próximo cliente, o la llegada de un nuevo cliente
             # si termine de atender a un cliente y hay clientes en la cola, entonces, debo comenzar la atención del siguiente cliente, entonces calculo el
             # tiempo de atención del siguiente cliente, y luego comparo si el próximo evento es la llegada de un nuevo cliente o el fin de atención del cliente actual
 
             simulacion.rnd_atencion = round(random.random(), 3)
             simulacion.tiempo_hasta_fin_de_atencion = simulacion.uniforme(simulacion.rnd_atencion, simulacion.min_atencion, simulacion.max_atencion)
+            simulacion.hora_proximo_fin_atencion = simulacion.hora_actual + simulacion.tiempo_hasta_fin_de_atencion
 
 
-            if simulacion.tiempo_hasta_fin_de_atencion < simulacion.tiempo_hasta_proxima_llegada:
+            if simulacion.hora_proximo_fin_atencion < simulacion.hora_proxima_llegada:
                 from app.domain.models.event.FinAtencion import FinAtencion
                 simulacion.proximo_evento = FinAtencion()
             else:
@@ -55,7 +60,10 @@ class FinReparacion(Evento):
                     primer_equipo.tiempo_de_reparacion = simulacion.tiempo_hasta_reparacion
                     primer_equipo.tiempo_reparacion_restante = simulacion.tiempo_hasta_reparacion
 
-                if simulacion.cola_equipos.primero().tiempo_reparacion_restante < simulacion.tiempo_hasta_proxima_llegada:
+
+                hora_proxima_reparacion = simulacion.hora_actual + simulacion.cola_equipos.primero().tiempo_reparacion_restante
+
+                if hora_proxima_reparacion < simulacion.hora_proxima_llegada:
                     simulacion.proximo_evento = FinReparacion()
                 else:
                     from app.domain.models.event.LlegaCliente import LlegaCliente
@@ -63,6 +71,11 @@ class FinReparacion(Evento):
 
                     # Si se interrumpe la reparacion del equipo, tengo que guardar los datos del tiempo que lo reparé y actualizar el tiempo faltante
 
+                    tiempo_transcurrido_reparando = simulacion.hora_proxima_llegada - simulacion.hora_actual
+
+                    primer_equipo.tiempo_reparacion_restante -= tiempo_transcurrido_reparando
+
+                    simulacion.cola_equipos.modificar_primero(primer_equipo)
 
 
             else:
@@ -70,4 +83,4 @@ class FinReparacion(Evento):
                 from app.domain.models.event.LlegaCliente import LlegaCliente
                 simulacion.proximo_evento = LlegaCliente()
         
-        # TODO Revisar logica del equipo, creo que nos falta guardar la informacion cuando se le interrumpe
+        # TODO Revisar logica del equipo, creo que nos falta guardar la información cuando se le interrumpe

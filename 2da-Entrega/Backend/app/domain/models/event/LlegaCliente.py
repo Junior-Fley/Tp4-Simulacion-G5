@@ -8,8 +8,10 @@ from typing import TYPE_CHECKING
 
 from domain.models.EstadoTecnico import EstadoTecnico
 
+
 if TYPE_CHECKING:
     from app.application.useCases.Simular import Simular
+    from app.domain.models.Equipo import Equipo
 
 class LlegaCliente(Evento):
     def __init__(self):
@@ -17,7 +19,11 @@ class LlegaCliente(Evento):
 
     def ejecutar_accion(self, simulacion: Simular):
         # 1 - Actualizo la hora
-        simulacion.hora_actual += simulacion.tiempo_hasta_proxima_llegada
+        simulacion.hora_actual = simulacion.hora_proxima_llegada
+
+        if simulacion.hora_actual >= simulacion.hora_final:
+            simulacion.clientes_no_atendidos = simulacion.cola_clientes.cantidad()
+            simulacion.cola_clientes.vaciar()
 
         # 2 - Creo el nuevo cliente que acaba de llegar, lo agrego a la cola de clientes
         cliente = Cliente(EstadoCliente.EN_COLA, simulacion.hora_actual, None, None)
@@ -36,6 +42,7 @@ class LlegaCliente(Evento):
             simulacion.cola_clientes.primero().estado = EstadoCliente.SIENDO_ATENDIDO
             simulacion.rnd_atencion = round(random.random(), 3)
             simulacion.tiempo_hasta_fin_de_atencion = simulacion.uniforme(simulacion.rnd_atencion, simulacion.min_atencion, simulacion.max_atencion)
+            simulacion.hora_proximo_fin_atencion = simulacion.hora_actual + simulacion.tiempo_hasta_fin_de_atencion
 
         #------------------------------------------ fin generación de la fila de la simulación ------------------------------------------
         # para este punto ya se generó toda la fila de la simulación, entonces ahora se debe decidir cuál va a ser el próximo evento que se va a ejecutar
@@ -43,7 +50,10 @@ class LlegaCliente(Evento):
 
         # asumo que llega el proximo cliente antes del fin de la atención, entonces no hace falta cambiar el evento de la simulación (sigue siendo LLegaCliente)
         # si finaliza la atención antes de la llegada del próximo cliente entonces cambio el evento de la simulación a FinAtención
-        if simulacion.tiempo_hasta_fin_de_atencion < simulacion.tiempo_hasta_proxima_llegada:
+        if self.comprobar_hora_final(simulacion):
+            return
+
+        if simulacion.hora_proxima_llegada > simulacion.hora_proximo_fin_atencion:
             from app.domain.models.event.FinAtencion import FinAtencion
             simulacion.proximo_evento = FinAtencion()
         else:

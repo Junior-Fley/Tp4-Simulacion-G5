@@ -1,16 +1,14 @@
 import math
 import random
 
-from app.domain.models.Cliente import Cliente
 from app.domain.models.ColaFIFO import ColaFIFO
-from app.domain.models.EstadoCliente import EstadoCliente
 from app.domain.models.event.Evento import Evento
 from app.domain.models.Tecnico import Tecnico
 from app.domain.models.EstadoTecnico import EstadoTecnico
 from app.domain.models.event.LlegaCliente import LlegaCliente
 from app.application.ports.Simulacion_repository import ISimulacionRepository
 from app.infrastructure.database.unit_of_work.unit_of_work_impl import UowFactory
-
+from domain.models.event.FinReparacion import FinReparacion
 
 from infrastructure.database.unit_of_work.unit_of_work import IUnitOfWork
 
@@ -41,6 +39,7 @@ class Simular:
         self.rnd_atencion: float = 0
         self.rnd_acepta: float = 0
         self.hora_proxima_llegada: float = 0
+        self.hora_proximo_fin_atencion: float= 0
         self.hora_actual: float = 0
         self.tiempo_hasta_proxima_llegada: float= 0
         self.tiempo_hasta_fin_de_atencion: float= 0
@@ -64,7 +63,7 @@ class Simular:
 
     @staticmethod
     def float_a_hora(minutos: float) -> str:
-        total_segundos = round(minutos * 60)
+        total_segundos = round(minutos * 60) % 86400  # 86400 = 24 * 3600, hace que el reloj "dé la vuelta"
 
         horas = total_segundos // 3600
         minutos_restantes = (total_segundos % 3600) // 60
@@ -102,7 +101,7 @@ class Simular:
                                                              self.cola_equipos)
 
     def guardar_fila_atencion(self, uow: IUnitOfWork):
-        if self.cola_clientes.cantidad() == 0:
+        if self.cola_clientes.cantidad() == 0 and self.cola_equipos.cantidad() == 0:
             # si el cliente que atendí era el último en la cola, entonces no hay un próximo cliente para atender, por lo tanto no se le calcula el tiempo de atención al próximo cliente, y se guarda la fila en la BDD, sin tiempo de atención
             uow.simu_repo.guardar_fin_atencion_no_hay_clientes(self.float_a_hora(self.hora_actual),
                                                                self.evento.nombre,
@@ -127,7 +126,7 @@ class Simular:
                                                             self.tecnico.estado.value,
                                                             self.rnd_atencion,
                                                             self.float_a_hora(self.tiempo_hasta_fin_de_atencion),
-                                                            self.float_a_hora(self.hora_proxima_llegada),
+                                                            self.float_a_hora(self.hora_proximo_fin_atencion),
                                                             self.rnd_presupuesto,
                                                             self.presupuesto,
                                                             self.rnd_acepta,
@@ -161,6 +160,26 @@ class Simular:
                                                            self.cola_equipos)
 
     def guardar_fila_llega_cliente(self, uow: IUnitOfWork):
+
+        if self.hora_actual > self.hora_final:
+            uow.simu_repo.guardar_llega_cliente_repara(self.float_a_hora(self.hora_actual),
+                                                       self.evento.nombre,
+                                                       self.rnd_llegada,
+                                                       self.float_a_hora(self.tiempo_hasta_proxima_llegada),
+                                                       self.float_a_hora(self.hora_proxima_llegada),
+                                                       self.tecnico.estado.value,
+                                                       self.rnd_reparacion,
+                                                       self.float_a_hora(self.cola_equipos.primero().tiempo_reparacion_restante),
+                                                       self.cola_clientes.cantidad(),
+                                                       self.cola_equipos.cantidad(),
+                                                       self.float_a_hora(self.tecnico.acum_atencion),
+                                                       self.float_a_hora(self.tecnico.acum_reparacion),
+                                                       self.clientes_no_atendidos,
+                                                       self.cola_clientes,
+                                                       self.cola_equipos)
+
+
+
         if self.cola_clientes.cantidad() == 1:
             # si el cliente que acaba de llegar es el único en la cola, entonces se atiende inmediatamente, se le calcula el tiempo de atención, y se guarda la fila en la BDD, con tiempo de atención
             uow.simu_repo.guardar_llega_cliente_atiende(self.float_a_hora(self.hora_actual),
@@ -171,7 +190,7 @@ class Simular:
                                                         self.tecnico.estado.value,
                                                         self.rnd_atencion,
                                                         self.float_a_hora(self.tiempo_hasta_fin_de_atencion),
-                                                        self.float_a_hora(self.hora_actual + self.tiempo_hasta_fin_de_atencion),
+                                                        self.float_a_hora(self.hora_proximo_fin_atencion),
                                                         self.cola_clientes.cantidad(),
                                                         self.cola_equipos.cantidad(),
                                                         self.float_a_hora(self.tecnico.acum_atencion),
@@ -214,8 +233,6 @@ class Simular:
 
         self.hora_proxima_llegada = self.hora_actual + self.tiempo_hasta_proxima_llegada
         # fin generación de la fila 0 de la tabla de simulación
-
-        self.cola_clientes.agregar(Cliente(EstadoCliente.EN_COLA, self.hora_proxima_llegada, None, None))
 
         #endregion FILA 0
 
@@ -272,18 +289,7 @@ class Simular:
 
 
             else:
-                # Ya no se atienden clientes, solo se reparan dispositivos
-
-                # Calculo la cantidad de clientes sin atender y vacío la lista
-                if not self.cierre:
-                    self.cierre = True
-                    self.clientes_no_atendidos = self.cola_clientes.cantidad()
-                    self.cola_clientes.vaciar()
-
                 while self.cola_equipos.cantidad() > 0:
-                    from app.domain.models.event.FinReparacion import FinReparacion
-                    self.evento = FinReparacion()
-
                     # Ejecuto el evento de reparación de los equipos que quedan en la cola, hasta que se reparen todos
                     self.evento.ejecutar_accion(self)
 
@@ -294,6 +300,7 @@ class Simular:
 
                         self.guardar_fila_reparacion(uow)
 
+                    self.evento = self.proximo_evento
 
 
 

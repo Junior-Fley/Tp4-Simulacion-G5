@@ -1,6 +1,12 @@
 from collections import deque
 from dataclasses import dataclass, field
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from domain.models.Cliente import Cliente
+    from domain.models.Equipo import Equipo
+
 
 @dataclass
 class ColaFIFO:
@@ -15,7 +21,7 @@ class ColaFIFO:
 
         return self.elementos.popleft()
 
-    def primero(self):
+    def primero(self) -> Cliente | Equipo | None:
         if self.esta_vacia():
             return None
 
