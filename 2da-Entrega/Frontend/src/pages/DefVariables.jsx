@@ -1,7 +1,13 @@
 import { useForm } from "react-hook-form";
+import { useState } from "react";
+
 import simulacionService from "../service/simulacion.service";
 
 const FormularioVar = () => {
+  const [mensaje, setMensaje] = useState("");
+  const [tipoMensaje, setTipoMensaje] = useState("");
+  const [cargando, setCargando] = useState(false);
+
 
   const {
     register,
@@ -11,11 +17,19 @@ const FormularioVar = () => {
     defaultValues: {
       x_tiempo: 45,
       i_iteraciones: 1000,
-      j_hora_inicio: 600,
+      hora_inicio: "10:00",
     },
   });
 
   const onSubmit = async (data) => {
+
+    // separar horas y minutos
+    const [horas, minutos] = data.hora_inicio.split(":");
+
+    // convertir a minutos totales
+    const totalMinutos =
+      Number(horas) * 60 +
+      Number(minutos);
 
     const parsed = {
 
@@ -23,7 +37,7 @@ const FormularioVar = () => {
 
       i_iteraciones: Number(data.i_iteraciones),
 
-      j_hora_inicio: Number(data.j_hora_inicio),
+      j_hora_inicio: totalMinutos,
 
     };
 
@@ -31,24 +45,67 @@ const FormularioVar = () => {
 
     try {
 
-      const response = await simulacionService.iniciarSimulacion(parsed);
+  setCargando(true);
 
-      console.log(response);
+  const response =
+    await simulacionService.iniciarSimulacion(parsed);
 
-      // guardar id de la simulación creada
-      localStorage.setItem("simId", response.id);
+  console.log("ver: ", response);
 
-      // refrescar
-      window.location.reload();
+  // guardar id
+  localStorage.setItem(
+    "simId",
+    response.id_simulacion
+  );
 
-    } catch (error) {
+  // guardar lista de simulaciones
+  const sims =
+    JSON.parse(localStorage.getItem("simulaciones")) || [];
 
-      console.error("Error al iniciar simulación:", error);
+  sims.push({
+    id: response.id_simulacion,
+  });
 
-    }
+  localStorage.setItem(
+    "simulaciones",
+    JSON.stringify(sims)
+  );
+
+  setMensaje("Simulación generada correctamente");
+
+  setTipoMensaje("success");
+
+  // refrescar pantalla automáticamente
+  window.location.reload();
+
+} catch (error) {
+
+  console.error(
+    "Error al iniciar simulación:",
+    error
+  );
+
+  setMensaje(
+    "Error al generar la simulación"
+  );
+
+  setTipoMensaje("danger");
+
+} finally {
+
+  setCargando(false);
+
+}
+
+
   };
 
-  const campo = (label, name, rules = {}) => (
+  const campo = (
+    label,
+    name,
+    type = "number",
+    rules = {}
+  ) => (
 
     <div className="mb-3">
 
@@ -57,9 +114,11 @@ const FormularioVar = () => {
       </label>
 
       <input
-        type="number"
+        type={type}
         step="any"
-        className={`form-control ${errors[name] ? "is-invalid" : ""}`}
+        className={`form-control ${
+          errors[name] ? "is-invalid" : ""
+        }`}
         {...register(name, {
           required: "Campo obligatorio",
           ...rules,
@@ -82,12 +141,20 @@ const FormularioVar = () => {
       <h4 className="mb-4">
         Iniciar Simulación
       </h4>
+       {/* MENSAJE */}
+      {mensaje && (
+        <div className={`alert alert-${tipoMensaje}`}>
+          {mensaje}
+        </div>
+      )}
+
 
       <form onSubmit={handleSubmit(onSubmit)}>
 
         {campo(
-          "Tiempo entre llegadas",
+          "Tiempo de Simulación",
           "x_tiempo",
+          "number",
           {
             min: {
               value: 1,
@@ -99,6 +166,7 @@ const FormularioVar = () => {
         {campo(
           "Cantidad de iteraciones",
           "i_iteraciones",
+          "number",
           {
             min: {
               value: 1,
@@ -108,21 +176,19 @@ const FormularioVar = () => {
         )}
 
         {campo(
-          "Hora de inicio (en minutos)",
-          "j_hora_inicio",
-          {
-            min: {
-              value: 0,
-              message: "Mínimo 0",
-            },
-          }
+          "Hora de inicio",
+          "hora_inicio",
+          "time"
         )}
 
         <button
           type="submit"
           className="btn btn-primary mt-2"
+          disabled={cargando}
         >
-          Simular
+          {cargando
+            ? "Generando simulación..."
+            : "Simular"}
         </button>
 
       </form>

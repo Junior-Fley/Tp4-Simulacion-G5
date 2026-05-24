@@ -76,6 +76,7 @@ export const VectorEstado = () => {
   return (
     <div className="tabla-container">
 
+       {/*****************************************************************************/}
       {/* SELECTOR DE SIMULACIONE */}
       <div className="mb-3">
 
@@ -103,6 +104,107 @@ export const VectorEstado = () => {
 
       </div>
 
+      {/* RESULTADOS */}
+      <div className="container mt-4">
+
+        <div className="row g-3">
+
+          <div className="col-md-3">
+            <div className="card shadow-sm border-danger">
+
+              <div className="card-body text-center">
+
+                <h6 className="card-title">
+                  Clientes No Atendidos
+                </h6>
+
+                <h3>
+                  {
+                    filas.length > 0
+                      ? filas[filas.length - 1]
+                          .clientes_no_atendidos
+                      : 0
+                  }
+                </h3>
+
+              </div>
+
+            </div>
+          </div>
+
+          <div className="col-md-3">
+            <div className="card shadow-sm border-primary">
+
+              <div className="card-body text-center">
+
+                <h6 className="card-title">
+                  Tiempo Atención Total
+                </h6>
+
+                <h3>
+                  {
+                    filas.length > 0
+                      ? filas[filas.length - 1]
+                          .tiempo_de_atencion_total
+                      : "00:00:00"
+                  }
+                </h3>
+
+              </div>
+
+            </div>
+          </div>
+
+          <div className="col-md-3">
+            <div className="card shadow-sm border-success">
+
+              <div className="card-body text-center">
+
+                <h6 className="card-title">
+                  Tiempo Reparación Total
+                </h6>
+
+                <h3>
+                  {
+                    filas.length > 0
+                      ? filas[filas.length - 1]
+                          .tiempo_de_reparacion_total
+                      : "00:00:00"
+                  }
+                </h3>
+
+              </div>
+
+            </div>
+          </div>
+
+          <div className="col-md-3">
+            <div className="card shadow-sm border-dark">
+
+              <div className="card-body text-center">
+
+                <h6 className="card-title">
+                  Estado Final Técnico
+                </h6>
+
+                <h3>
+                  {
+                    filas.length > 0
+                      ? filas[filas.length - 1]
+                          .estado_tecnico
+                      : "-"
+                  }
+                </h3>
+
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
       {/* TABLA */}
       <Table hover bordered className="tabla-vector">
 
@@ -116,7 +218,23 @@ export const VectorEstado = () => {
 
         <tbody>
           {filas.map((fila, index) => (
-            <tr key={index}>
+
+            <React.Fragment key={index}>
+                  {/* SEPARADOR VISUAL */}
+            {fila.evento === "Abre_Tienda" && (
+              <tr className="table-primary">
+                <td
+                  colSpan={columnas_th.length}
+                  className="text-center fw-bold"
+                >
+                  Inicio de nueva simulación
+                </td>
+              </tr>
+            )}
+
+
+
+            <tr>
 
               <td>{fila.hora}</td>
               <td>{fila.evento}</td>
@@ -129,17 +247,18 @@ export const VectorEstado = () => {
               <td>{fila.proximo_fin_atencion}</td>
               <td>{mostrarValorVacioNAda(fila.rnd_presupuesto)}</td>
               <td>{fila.presupuesto}</td>
-              <td>{mostrarValorVacioNAda(fila.rnd_deja_para_reparar)}</td>
-              <td>{fila.deja_para_reparar ? "Sí" : "No"}</td>
+              <td>{mostrarValorVacioNAda(fila.rnd_deja_equipo)}</td>
+              <td>{fila.deja_equipo ? "Sí" : "No"}</td>
               <td>{mostrarValorVacioNAda(fila.rnd_duracion_reparacion)}</td>
               <td>{fila.duracion_reparacion}</td>
-              <td>{fila.cola_atencion_cantidad}</td>
-              <td>{fila.cola_equipos_cantidad}</td>
-              <td>{fila.tiempo_de_atencion}</td>
-              <td>{fila.tiempo_de_reparacion}</td>
-              <td>{fila.clientes_no_atendidos_por_cierre}</td>
+              <td>{fila.fila_atencion_cantidad}</td>
+              <td>{fila.fila_equipos_cantidad}</td>
+              <td>{fila.tiempo_de_atencion_total}</td>
+              <td>{fila.tiempo_de_reparacion_total}</td>
+              <td>{fila.clientes_no_atendidos}</td>
 
             </tr>
+            </React.Fragment>
           ))}
         </tbody>
 
