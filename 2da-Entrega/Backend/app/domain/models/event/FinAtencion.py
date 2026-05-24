@@ -17,6 +17,9 @@ class FinAtencion(Evento):
 
     def ejecutar_accion(self, simulacion: Simular):
 
+        # Aumentamos el acumulador del tecnico
+        simulacion.tecnico.acum_atencion += simulacion.hora_proximo_fin_atencion - simulacion.hora_actual
+
         # 1 - Actualizo la hora
         simulacion.hora_actual = simulacion.hora_proximo_fin_atencion
 
@@ -46,7 +49,6 @@ class FinAtencion(Evento):
                                   None, None, 0)
 
             simulacion.cola_equipos.agregar(nuevo_equipo)
-
 
         # 5 - Defino cuál es el próximo evento a ejecutar
 

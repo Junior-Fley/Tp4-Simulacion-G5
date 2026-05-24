@@ -19,6 +19,9 @@ class FinReparacion(Evento):
         # que está primero en la cola de equipos
         simulacion.hora_actual += simulacion.cola_equipos.primero().tiempo_reparacion_restante
 
+        # Aumentamos el acumulador del tecnico
+        simulacion.tecnico.acum_reparacion += simulacion.cola_equipos.primero().tiempo_reparacion_restante
+
         # Retiro el equipo que se acaba de reparar de la cola de equipos
         simulacion.cola_equipos.retirar()
 
@@ -31,7 +34,7 @@ class FinReparacion(Evento):
         if simulacion.cola_clientes.cantidad() > 0: # si hay clientes en la cola, entonces el próximo evento puede ser el fin de atención del próximo cliente, o la llegada de un nuevo cliente
             # si termine de atender a un cliente y hay clientes en la cola, entonces, debo comenzar la atención del siguiente cliente, entonces calculo el
             # tiempo de atención del siguiente cliente, y luego comparo si el próximo evento es la llegada de un nuevo cliente o el fin de atención del cliente actual
-
+            simulacion.tecnico.estado = EstadoTecnico.ATENDIENDO_CLIENTE
             simulacion.rnd_atencion = round(random.random(), 3)
             simulacion.tiempo_hasta_fin_de_atencion = simulacion.uniforme(simulacion.rnd_atencion, simulacion.min_atencion, simulacion.max_atencion)
             simulacion.hora_proximo_fin_atencion = simulacion.hora_actual + simulacion.tiempo_hasta_fin_de_atencion
@@ -46,7 +49,7 @@ class FinReparacion(Evento):
         else:
             # si no hay clientes en la cola, entonces el próximo evento puede ser la llegada de un nuevo cliente o la reparación de un equipo
             if simulacion.cola_equipos.cantidad() > 0: # si hay equipos en la cola, entonces el próximo evento puede ser la reparación de un equipo o la llegada de un nuevo cliente
-
+                simulacion.tecnico.estado = EstadoTecnico.REPARANDO
                 primer_equipo: Equipo = simulacion.cola_equipos.primero()
 
                 if primer_equipo.tiempo_de_reparacion is None:
@@ -79,6 +82,7 @@ class FinReparacion(Evento):
 
 
             else:
+                simulacion.tecnico.estado = EstadoTecnico.LIBRE
                 # si no hay clientes ni equipos en la cola, entonces el próximo evento es la llegada de un nuevo cliente
                 from app.domain.models.event.LlegaCliente import LlegaCliente
                 simulacion.proximo_evento = LlegaCliente()

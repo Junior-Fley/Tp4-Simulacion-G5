@@ -206,6 +206,7 @@ class Simular:
                                                            self.float_a_hora(self.tiempo_hasta_proxima_llegada),
                                                            self.float_a_hora(self.hora_proxima_llegada),
                                                            self.tecnico.estado.value,
+                                                           self.float_a_hora(self.hora_proximo_fin_atencion),
                                                            self.cola_clientes.cantidad(),
                                                            self.cola_equipos.cantidad(),
                                                            self.float_a_hora(self.tecnico.acum_atencion),

@@ -18,6 +18,12 @@ class LlegaCliente(Evento):
         super().__init__("Llega_Cliente")
 
     def ejecutar_accion(self, simulacion: Simular):
+
+        # Aumentamos los acumuladores del tecnico dependiendo qué estuvo haciendo hasta ahora, para luego poder calcular los promedios al final de la simulación
+        if simulacion.tecnico.estado == EstadoTecnico.ATENDIENDO_CLIENTE:
+            simulacion.tecnico.acum_atencion += simulacion.hora_proxima_llegada - simulacion.hora_actual
+        elif simulacion.tecnico.estado == EstadoTecnico.REPARANDO:
+            simulacion.tecnico.acum_reparacion += simulacion.hora_proxima_llegada - simulacion.hora_actual
         # 1 - Actualizo la hora
         simulacion.hora_actual = simulacion.hora_proxima_llegada
 

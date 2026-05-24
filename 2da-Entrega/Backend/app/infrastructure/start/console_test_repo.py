@@ -63,12 +63,13 @@ class ConsoleTestRepo(ISimulacionRepository):
                           cola_clientes, cola_equipos)
 
     def guardar_llega_cliente_no_atiende(self, hora: str, evento: str, rnd_llegada: float, tiempo_hasta_llegada: str,
-                                         proxima_llegada: str, estado_tecnico: str, cola_atencion_cantidad: int,
+                                         proxima_llegada: str, estado_tecnico: str, proximo_fin_atencion: str,
+                                         cola_atencion_cantidad: int,
                                          cola_equipos_cantidad: int, tiempo_atencion_acum, tiempo_reparacion_acum,
                                          clientes_no_atendidos_por_cierre: int, cola_clientes: ColaFIFO,
                                          cola_equipos: ColaFIFO) -> None:
         self.guardar_fila(hora, evento, rnd_llegada, tiempo_hasta_llegada, proxima_llegada, estado_tecnico,
-                          -1, '', '', -1, '', -1,
+                          -1, '', proximo_fin_atencion, -1, '', -1,
                           None, -1, '', cola_atencion_cantidad, cola_equipos_cantidad,
                           tiempo_atencion_acum, tiempo_reparacion_acum, clientes_no_atendidos_por_cierre,
                           cola_clientes, cola_equipos)
