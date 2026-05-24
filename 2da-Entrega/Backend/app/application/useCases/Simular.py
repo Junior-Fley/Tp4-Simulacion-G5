@@ -55,7 +55,7 @@ class Simular:
         self.cola_equipos: ColaFIFO = ColaFIFO()
         self.cola_clientes: ColaFIFO = ColaFIFO()
 
-        self.hora_apertura = 600
+        self.hora_apertura = self.j_hora_inicio
         self.hora_cierre = 1080
         self.local_abierto = True
 
