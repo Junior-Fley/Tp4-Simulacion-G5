@@ -1,10 +1,8 @@
-from __future__ import annotations
-
-from sqlalchemy import Integer, String, Numeric, Float, Boolean
+from sqlalchemy import Integer, String, Float, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
+from infrastructure.database.base import Base
 
-from app.infrastructure.database.base import Base
 
 class SimulacionORM(Base):
     __tablename__ = 'simulacion'
@@ -15,7 +13,7 @@ class SimulacionORM(Base):
         autoincrement=True
     )
 
-    horario: Mapped[str] = mapped_column(
+    hora: Mapped[str] = mapped_column(
         String,
         nullable=True
     )
@@ -45,12 +43,12 @@ class SimulacionORM(Base):
         nullable=True
     )
 
-    rnd_atencion: Mapped[float] = mapped_column(
+    rnd_duracion_atencion: Mapped[float] = mapped_column(
         Float,
         nullable=True
     )
 
-    tiempo_de_atencion: Mapped[str] = mapped_column(
+    duracion_atencion: Mapped[str] = mapped_column(
         String,
         nullable=True
     )
@@ -80,7 +78,7 @@ class SimulacionORM(Base):
         nullable=True
     )
 
-    rnd_reparacion: Mapped[float] = mapped_column(
+    rnd_duracion_reparacion: Mapped[float] = mapped_column(
         Float,
         nullable=True
     )
@@ -90,12 +88,12 @@ class SimulacionORM(Base):
         nullable=True
     )
 
-    fila_clientes: Mapped[int] = mapped_column(
+    fila_atencion_cantidad: Mapped[int] = mapped_column(
         Integer,
         nullable=True
     )
 
-    fila_equipos: Mapped[int] = mapped_column(
+    fila_equipos_cantidad: Mapped[int] = mapped_column(
         Integer,
         nullable=True
     )

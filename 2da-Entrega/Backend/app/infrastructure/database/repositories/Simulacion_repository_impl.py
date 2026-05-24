@@ -15,25 +15,25 @@ class SimulacionRepositoryImpl(ISimulacionRepository):
                      clientes_no_atendidos_por_cierre: int, cola_clientes: ColaFIFO, cola_equipos: ColaFIFO) -> None:
 
         #TODO HAY QUE MODIFICAR LA BDD PARA PODER GUARDAR LOS TIEMPOS ACUMULADOS, Y LA COLA DE CLIENTES Y EQUIPOS
-        simulacion = SimulacionORM(horario=hora,
+        simulacion = SimulacionORM(hora=hora,
                                    evento=evento,
                                    rnd_llegada=rnd_llegada,
                                    tiempo_entre_llegadas=tiempo_entre_llegadas,
                                    proxima_llegada=hora_proxima_llegada,
                                    estado_tecnico=estado_tecnico,
-                                   rnd_atencion=rnd_atencion,
-                                   tiempo_de_atencion=duracion_atencion,
+                                   rnd_duracion_atencion=rnd_atencion,
+                                   duracion_atencion=duracion_atencion,
                                    proximo_fin_atencion=proximo_fin_atencion,
                                    rnd_presupuesto=rnd_presupuesto,
                                    presupuesto=presupuesto,
                                    rnd_deja_equipo=rnd_acepta_reparar,
                                    deja_equipo=deja_para_reparar,
-                                   rnd_reparacion=rnd_reparacion,
+                                   rnd_duracion_reparacion=rnd_reparacion,
                                    duracion_reparacion=duracion_reparacion,
-                                   fila_clientes=cola_atencion_cantidad,
-                                   fila_equipos=cola_equipos_cantidad,
-                                   tiempo_de_atencion_total='CALCULAR TIEMPOS ACUMULADOS',
-                                   tiempo_de_reparacion_total='CALCULAR TIEMPOS ACUMULADOS',
+                                   fila_atencion_cantidad=cola_atencion_cantidad,
+                                   fila_equipos_cantidad=cola_equipos_cantidad,
+                                   tiempo_de_atencion_total=tiempo_atencion_acum,
+                                   tiempo_de_reparacion_total=tiempo_reparacion_acum,
                                    clientes_no_atendidos=clientes_no_atendidos_por_cierre)
 
         self.session.add(simulacion)
