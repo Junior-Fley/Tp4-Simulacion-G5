@@ -16,7 +16,6 @@ function App() {
         <Route path="/" element={<DefVariables />} />
       </Routes>
       <VectorEstado />
-      <Resultados />
       <PiePagina />
       
     </BrowserRouter>
