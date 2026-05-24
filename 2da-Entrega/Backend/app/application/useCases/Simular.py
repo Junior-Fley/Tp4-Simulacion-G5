@@ -90,7 +90,7 @@ class Simular:
                                                              self.evento.nombre,
                                                              self.float_a_hora(self.hora_proxima_llegada),
                                                              self.tecnico.estado.value,
-                                                             self.rnd_reparacion,
+                                                             round(self.rnd_reparacion,3),
                                                              self.float_a_hora(self.tiempo_hasta_reparacion),
                                                              self.cola_clientes.cantidad(),
                                                              self.cola_equipos.cantidad(),
@@ -107,9 +107,9 @@ class Simular:
                                                                self.evento.nombre,
                                                                self.float_a_hora(self.hora_proxima_llegada),
                                                                self.tecnico.estado.value,
-                                                               self.rnd_presupuesto,
+                                                               round(self.rnd_atencion,3),
                                                                self.presupuesto,
-                                                               self.rnd_acepta,
+                                                               round(self.rnd_acepta,3),
                                                                self.acepto,
                                                                self.cola_clientes.cantidad(),
                                                                self.cola_equipos.cantidad(),
@@ -124,12 +124,12 @@ class Simular:
                                                             self.evento.nombre,
                                                             self.float_a_hora(self.hora_proxima_llegada),
                                                             self.tecnico.estado.value,
-                                                            self.rnd_atencion,
+                                                            round(self.rnd_atencion,3),
                                                             self.float_a_hora(self.tiempo_hasta_fin_de_atencion),
                                                             self.float_a_hora(self.hora_proximo_fin_atencion),
-                                                            self.rnd_presupuesto,
+                                                            round(self.rnd_atencion,3),
                                                             self.presupuesto,
-                                                            self.rnd_acepta,
+                                                            round(self.rnd_acepta,3),
                                                             self.acepto,
                                                             self.cola_clientes.cantidad(),
                                                             self.cola_equipos.cantidad(),
@@ -146,11 +146,11 @@ class Simular:
                                                            self.evento.nombre,
                                                            self.float_a_hora(self.hora_proxima_llegada),
                                                            self.tecnico.estado.value,
-                                                           self.rnd_presupuesto,
+                                                           round(self.rnd_presupuesto,3),
                                                            self.presupuesto,
-                                                           self.rnd_acepta,
+                                                           round(self.rnd_acepta,3),
                                                            self.acepto,
-                                                           self.rnd_reparacion,
+                                                           round(self.rnd_reparacion,3),
                                                            self.float_a_hora(self.tiempo_hasta_reparacion),
                                                            self.cola_clientes.cantidad(),
                                                            self.cola_equipos.cantidad(),
@@ -161,14 +161,14 @@ class Simular:
 
     def guardar_fila_llega_cliente(self, uow: IUnitOfWork):
 
-        if self.hora_actual > self.hora_final:
+        if self.hora_actual > self.hora_final and self.cola_equipos.cantidad() > 0:
             uow.simu_repo.guardar_llega_cliente_repara(self.float_a_hora(self.hora_actual),
                                                        self.evento.nombre,
-                                                       self.rnd_llegada,
+                                                       round(self.rnd_llegada,3),
                                                        self.float_a_hora(self.tiempo_hasta_proxima_llegada),
                                                        self.float_a_hora(self.hora_proxima_llegada),
                                                        self.tecnico.estado.value,
-                                                       self.rnd_reparacion,
+                                                       round(self.rnd_reparacion,3),
                                                        self.float_a_hora(self.cola_equipos.primero().tiempo_reparacion_restante),
                                                        self.cola_clientes.cantidad(),
                                                        self.cola_equipos.cantidad(),
@@ -177,18 +177,35 @@ class Simular:
                                                        self.clientes_no_atendidos,
                                                        self.cola_clientes,
                                                        self.cola_equipos)
-
+            return
+        elif self.hora_actual > self.hora_final and self.cola_equipos.cantidad() == 0:
+            uow.simu_repo.guardar_llega_cliente_repara(self.float_a_hora(self.hora_actual),
+                                                       self.evento.nombre,
+                                                       round(self.rnd_llegada, 3),
+                                                       self.float_a_hora(self.tiempo_hasta_proxima_llegada),
+                                                       self.float_a_hora(self.hora_proxima_llegada),
+                                                       self.tecnico.estado.value,
+                                                       round(self.rnd_reparacion, 3),
+                                                       None,
+                                                       self.cola_clientes.cantidad(),
+                                                       self.cola_equipos.cantidad(),
+                                                       self.float_a_hora(self.tecnico.acum_atencion),
+                                                       self.float_a_hora(self.tecnico.acum_reparacion),
+                                                       self.clientes_no_atendidos,
+                                                       self.cola_clientes,
+                                                       self.cola_equipos)
+            return
 
 
         if self.cola_clientes.cantidad() == 1:
             # si el cliente que acaba de llegar es el único en la cola, entonces se atiende inmediatamente, se le calcula el tiempo de atención, y se guarda la fila en la BDD, con tiempo de atención
             uow.simu_repo.guardar_llega_cliente_atiende(self.float_a_hora(self.hora_actual),
                                                         self.evento.nombre,
-                                                        self.rnd_llegada,
+                                                        round(self.rnd_llegada,3),
                                                         self.float_a_hora(self.tiempo_hasta_proxima_llegada),
                                                         self.float_a_hora(self.hora_proxima_llegada),
                                                         self.tecnico.estado.value,
-                                                        self.rnd_atencion,
+                                                        round(self.rnd_atencion,3),
                                                         self.float_a_hora(self.tiempo_hasta_fin_de_atencion),
                                                         self.float_a_hora(self.hora_proximo_fin_atencion),
                                                         self.cola_clientes.cantidad(),
@@ -202,7 +219,7 @@ class Simular:
             # si el cliente no es el primero en la cola, entonces no se atiende inmediatamente, no se le calcula el tiempo de atención, y se guarda la fila en la BDD, sin tiempo de atención
             uow.simu_repo.guardar_llega_cliente_no_atiende(self.float_a_hora(self.hora_actual),
                                                            self.evento.nombre,
-                                                           self.rnd_llegada,
+                                                           round(self.rnd_llegada,3),
                                                            self.float_a_hora(self.tiempo_hasta_proxima_llegada),
                                                            self.float_a_hora(self.hora_proxima_llegada),
                                                            self.tecnico.estado.value,
@@ -228,7 +245,7 @@ class Simular:
 
         self.tecnico = Tecnico(estado= EstadoTecnico.LIBRE, equipo_asignado=None, acum_atencion=0, acum_reparacion=0)
 
-        self.rnd_llegada = round(random.random(), 3) # se genera un número uniforme entre 0 y 0.99
+        self.rnd_llegada = random.random()# se genera un número uniforme entre 0 y 0.99
 
         self.tiempo_hasta_proxima_llegada = self.exponencial_negativa(self.media_llegada, self.rnd_llegada)
 
@@ -246,7 +263,7 @@ class Simular:
 
             uow.simu_repo.guardar_fila(self.float_a_hora(self.hora_actual),
                                        'Abre Tienda',
-                                       self.rnd_llegada,
+                                       round(self.rnd_llegada,3),
                                        self.float_a_hora(self.tiempo_hasta_proxima_llegada),
                                        self.float_a_hora(self.hora_proxima_llegada),
                                        self.tecnico.estado.value,

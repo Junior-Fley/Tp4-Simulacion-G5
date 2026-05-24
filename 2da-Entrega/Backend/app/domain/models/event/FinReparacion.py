@@ -35,7 +35,7 @@ class FinReparacion(Evento):
             # si termine de atender a un cliente y hay clientes en la cola, entonces, debo comenzar la atención del siguiente cliente, entonces calculo el
             # tiempo de atención del siguiente cliente, y luego comparo si el próximo evento es la llegada de un nuevo cliente o el fin de atención del cliente actual
             simulacion.tecnico.estado = EstadoTecnico.ATENDIENDO_CLIENTE
-            simulacion.rnd_atencion = round(random.random(), 3)
+            simulacion.rnd_atencion = random.random()
             simulacion.tiempo_hasta_fin_de_atencion = simulacion.uniforme(simulacion.rnd_atencion, simulacion.min_atencion, simulacion.max_atencion)
             simulacion.hora_proximo_fin_atencion = simulacion.hora_actual + simulacion.tiempo_hasta_fin_de_atencion
 
@@ -55,7 +55,7 @@ class FinReparacion(Evento):
                 if primer_equipo.tiempo_de_reparacion is None:
                     # es la primera vez que se trabaja con este equipo, debo calcular cuanto va a tardar en repararse
 
-                    simulacion.rnd_reparacion = round(random.random(), 3)
+                    simulacion.rnd_reparacion = random.random()
                     simulacion.tiempo_hasta_reparacion = simulacion.exponencial_negativa(simulacion.media_reparacion,
                                                                                          simulacion.rnd_reparacion)
 

@@ -27,16 +27,19 @@ class LlegaCliente(Evento):
         # 1 - Actualizo la hora
         simulacion.hora_actual = simulacion.hora_proxima_llegada
 
-        if simulacion.hora_actual >= simulacion.hora_final:
-            simulacion.clientes_no_atendidos = simulacion.cola_clientes.cantidad()
-            simulacion.cola_clientes.vaciar()
-
         # 2 - Creo el nuevo cliente que acaba de llegar, lo agrego a la cola de clientes
         cliente = Cliente(EstadoCliente.EN_COLA, simulacion.hora_actual, None, None)
         simulacion.cola_clientes.agregar(cliente)
 
-        # 3- Calculo la próxima llegada de un cliente
-        simulacion.rnd_llegada = round(random.random(), 3)
+        # 3- Calculo la próxima llegada de un cliente sólo si no se pasó de hora
+        if simulacion.hora_actual >= simulacion.hora_final:
+            simulacion.clientes_no_atendidos = simulacion.cola_clientes.cantidad()
+            simulacion.cola_clientes.vaciar()
+            # delegar la elección de próximo evento (si hay equipos para reparar) y cortar:
+            self.comprobar_hora_final(simulacion)
+            return
+
+        simulacion.rnd_llegada = random.random()
         simulacion.tiempo_hasta_proxima_llegada = simulacion.exponencial_negativa(simulacion.media_llegada, simulacion.rnd_llegada)
         simulacion.hora_proxima_llegada = simulacion.hora_actual + simulacion.tiempo_hasta_proxima_llegada
 
@@ -46,7 +49,7 @@ class LlegaCliente(Evento):
         # 5 - Se calcula el tiempo de atencion del cliente si no hay nadie delante y no empecé a atenderlo.
         if simulacion.cola_clientes.primero().estado == EstadoCliente.EN_COLA:
             simulacion.cola_clientes.primero().estado = EstadoCliente.SIENDO_ATENDIDO
-            simulacion.rnd_atencion = round(random.random(), 3)
+            simulacion.rnd_atencion = random.random()
             simulacion.tiempo_hasta_fin_de_atencion = simulacion.uniforme(simulacion.rnd_atencion, simulacion.min_atencion, simulacion.max_atencion)
             simulacion.hora_proximo_fin_atencion = simulacion.hora_actual + simulacion.tiempo_hasta_fin_de_atencion
 

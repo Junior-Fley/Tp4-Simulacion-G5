@@ -31,7 +31,7 @@ class FinAtencion(Evento):
         simulacion.cola_clientes.retirar()
 
         # 3 - Se calcula si el cliente acepta la reparación o no
-        simulacion.rnd_presupuesto = round(random.random(),3)
+        simulacion.rnd_presupuesto = random.random()
 
         simulacion.presupuesto = "Normal"
         simulacion.tiempo_hasta_reparacion = None #TODO revisar esto
@@ -39,7 +39,7 @@ class FinAtencion(Evento):
         simulacion.acepto = True
         if simulacion.rnd_presupuesto < 0.3:
             simulacion.presupuesto = "Elevado"
-            simulacion.rnd_acepta = round(random.random(),3)
+            simulacion.rnd_acepta = random.random()
             if simulacion.rnd_acepta < 0.5:
                 simulacion.acepto = False
 
@@ -65,7 +65,7 @@ class FinAtencion(Evento):
             simulacion.tecnico.estado = EstadoTecnico.ATENDIENDO_CLIENTE
 
             # Calculo el tiempo de atencion
-            simulacion.rnd_atencion = round(random.random(),3)
+            simulacion.rnd_atencion = random.random()
             simulacion.tiempo_hasta_fin_de_atencion = simulacion.uniforme(simulacion.rnd_atencion, simulacion.min_atencion, simulacion.max_atencion)
             simulacion.hora_proximo_fin_atencion = simulacion.hora_actual + simulacion.tiempo_hasta_fin_de_atencion
 
@@ -92,7 +92,7 @@ class FinAtencion(Evento):
 
                     # es la primera vez que se trabaja con este equipo, debo calcular cuanto va a tardar en repararse
 
-                    simulacion.rnd_reparacion = round(random.random(),3)
+                    simulacion.rnd_reparacion = random.random()
                     simulacion.tiempo_hasta_reparacion = simulacion.exponencial_negativa(simulacion.media_reparacion,
                                                                                          simulacion.rnd_reparacion)
 
