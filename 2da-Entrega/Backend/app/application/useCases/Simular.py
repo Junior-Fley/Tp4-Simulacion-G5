@@ -12,6 +12,8 @@ from app.application.ports.Simulacion_repository import ISimulacionRepository
 from app.infrastructure.database.unit_of_work.unit_of_work_impl import UowFactory
 from app.infrastructure.database.unit_of_work.unit_of_work import IUnitOfWork
 
+from app.domain.models.event.AbreTienda import AbreTienda
+from app.domain.models.event.FinReparacion import FinReparacion
 
 
 class Simular:
@@ -25,7 +27,6 @@ class Simular:
         self.x_tiempo: float = x_tiempo # representa el tiempo en float, debe convertirse a minutos para el reporte final
         self.i_iteraciones: int = i_iteraciones
         self.j_hora_inicio: float = j_hora_inicio
-        self.hora_final : float = 1080
 
         self.media_llegada: float = 45 # representa el tiempo de media en minutos entre llegadas de clientes
         self.min_atencion: int = 10 # representa el tiempo mínimo en minutos para atender un cliente
@@ -53,6 +54,25 @@ class Simular:
         self.cierre: bool = False
         self.cola_equipos: ColaFIFO = ColaFIFO()
         self.cola_clientes: ColaFIFO = ColaFIFO()
+
+        self.hora_apertura = 600
+        self.hora_cierre = 1080
+        self.local_abierto = True
+
+    def abrir_tienda(self):
+        self.local_abierto = True
+        self.hora_actual = self.hora_apertura
+        self.tecnico.estado = EstadoTecnico.LIBRE
+        self.rnd_llegada = random.random()
+        self.tiempo_hasta_proxima_llegada = self.exponencial_negativa(self.media_llegada, self.rnd_llegada)
+        self.hora_proxima_llegada = self.hora_actual + self.tiempo_hasta_proxima_llegada
+
+    def cerrar_tienda(self):
+        self.local_abierto = False
+
+    def programar_reapertura(self):
+        self.evento = AbreTienda()
+        self.proximo_evento = AbreTienda()
 
     @staticmethod
     def exponencial_negativa(media: float, rnd: float) -> float:
@@ -152,7 +172,7 @@ class Simular:
                                                            round(self.rnd_acepta,3),
                                                            self.acepto,
                                                            round(self.rnd_reparacion,3),
-                                                           self.float_a_hora(self.tiempo_hasta_reparacion),
+                                                           self.float_a_hora(self.tiempo_hasta_reparacion) if self.tiempo_hasta_reparacion else None,
                                                            self.cola_clientes.cantidad(),
                                                            self.cola_equipos.cantidad(),
                                                            self.float_a_hora(self.tecnico.acum_atencion),
@@ -162,7 +182,7 @@ class Simular:
 
     def guardar_fila_llega_cliente(self, uow: IUnitOfWork):
 
-        if self.hora_actual > self.hora_final and self.cola_equipos.cantidad() > 0:
+        if self.hora_actual > self.hora_cierre and self.cola_equipos.cantidad() > 0:
             uow.simu_repo.guardar_llega_cliente_repara(self.id_coleccion, self.float_a_hora(self.hora_actual),
                                                        self.evento.nombre,
                                                        round(self.rnd_llegada,3),
@@ -179,7 +199,7 @@ class Simular:
                                                        self.cola_clientes,
                                                        self.cola_equipos)
             return
-        elif self.hora_actual > self.hora_final and self.cola_equipos.cantidad() == 0:
+        elif self.hora_actual > self.hora_cierre and self.cola_equipos.cantidad() == 0:
             uow.simu_repo.guardar_llega_cliente_repara(self.id_coleccion, self.float_a_hora(self.hora_actual),
                                                        self.evento.nombre,
                                                        round(self.rnd_llegada, 3),
@@ -242,88 +262,113 @@ class Simular:
         self.cola_equipos = ColaFIFO()
         self.cola_clientes = ColaFIFO()
 
-        #region FILA 0
-
         # generación de la fila 0 de la tabla de simulación
         self.hora_actual = self.j_hora_inicio
+        self.local_abierto = True
 
-        self.tecnico = Tecnico(estado= EstadoTecnico.LIBRE, equipo_asignado=None, acum_atencion=0, acum_reparacion=0)
+        self.tecnico = Tecnico(estado=EstadoTecnico.LIBRE, equipo_asignado=None, acum_atencion=0, acum_reparacion=0)
 
-        self.rnd_llegada = random.random()# se genera un número uniforme entre 0 y 0.99
-
+        self.rnd_llegada = random.random()
         self.tiempo_hasta_proxima_llegada = self.exponencial_negativa(self.media_llegada, self.rnd_llegada)
-
         self.hora_proxima_llegada = self.hora_actual + self.tiempo_hasta_proxima_llegada
-        # fin generación de la fila 0 de la tabla de simulación
 
-        #endregion FILA 0
-
-        # region Guardar fila 0 en la BDD
+        # Guardar fila 0 en la BDD
         with self.uow_factory() as uow:
-
             if self.repo_override is not None:
                 uow.simu_repo = self.repo_override
 
-
-            uow.simu_repo.guardar_fila(self.id_coleccion, self.float_a_hora(self.hora_actual),
-                                       'Abre Tienda',
-                                       round(self.rnd_llegada,3),
-                                       self.float_a_hora(self.tiempo_hasta_proxima_llegada),
-                                       self.float_a_hora(self.hora_proxima_llegada),
-                                       self.tecnico.estado.value,
-                                       -1,
-                                       '','',
-                                       -1,
-                                       '',-1,None,
-                                       -1,
-                                       '',0,0,
-                                       '', '', 0,
-                                       self.cola_clientes,
-                                       self.cola_equipos)
-
-        # endregion Guardar fila 0 en la BDD
+            uow.simu_repo.guardar_fila(
+                self.id_coleccion, self.float_a_hora(self.hora_actual),
+                'Abre Tienda',
+                round(self.rnd_llegada, 3),
+                self.float_a_hora(self.tiempo_hasta_proxima_llegada),
+                self.float_a_hora(self.hora_proxima_llegada),
+                self.tecnico.estado.value,
+                -1,
+                '', '',
+                -1,
+                '', -1, None,
+                -1,
+                '', 0, 0,
+                '', '', 0,
+                self.cola_clientes,
+                self.cola_equipos
+            )
 
         self.evento = LlegaCliente()
 
         for i in range(self.i_iteraciones):
-            if self.hora_actual < self.hora_final:
-
+            if self.local_abierto:
                 self.evento.ejecutar_accion(self)
 
                 with self.uow_factory() as uow:
                     if self.repo_override is not None:
                         uow.simu_repo = self.repo_override
 
-                    # TODO Las funciones no muestran correctamente los datos correctamente
                     match self.evento.nombre:
                         case "Llega_Cliente":
                             self.guardar_fila_llega_cliente(uow)
-
                         case "Fin_Atención":
                             self.guardar_fila_atencion(uow)
-
                         case "Fin_Reparación":
                             self.guardar_fila_reparacion(uow)
-
-
+                        case "Abre_Tienda":
+                            pass
 
                 self.evento = self.proximo_evento
 
+                if self.hora_actual >= self.hora_cierre:
+                    self.local_abierto = False
+                    self.evento = FinReparacion() if self.cola_equipos.cantidad() > 0 else AbreTienda()
+                    self.proximo_evento = self.evento
 
             else:
-                while self.cola_equipos.cantidad() > 0:
-                    # Ejecuto el evento de reparación de los equipos que quedan en la cola, hasta que se reparen todos
+                if self.cola_equipos.cantidad() > 0:
                     self.evento.ejecutar_accion(self)
 
                     with self.uow_factory() as uow:
-
                         if self.repo_override is not None:
                             uow.simu_repo = self.repo_override
 
                         self.guardar_fila_reparacion(uow)
 
                     self.evento = self.proximo_evento
+                else:
+                    self.evento = AbreTienda()
+                    self.evento.ejecutar_accion(self)
+                    self.proximo_evento = LlegaCliente()
 
+                    with self.uow_factory() as uow:
+                        if self.repo_override is not None:
+                            uow.simu_repo = self.repo_override
+
+                        uow.simu_repo.guardar_fila(
+                            self.id_coleccion,
+                            self.float_a_hora(self.hora_actual),
+                            self.evento.nombre,
+                            round(self.rnd_llegada, 3),
+                            self.float_a_hora(self.tiempo_hasta_proxima_llegada),
+                            self.float_a_hora(self.hora_proxima_llegada),
+                            self.tecnico.estado.value,
+                            -1,
+                            '',
+                            '',
+                            -1,
+                            '',
+                            -1,
+                            None,
+                            -1,
+                            '',
+                            0,
+                            0,
+                            '',
+                            '',
+                            0,
+                            self.cola_clientes,
+                            self.cola_equipos
+                        )
+
+                    self.evento = self.proximo_evento
 
         return self.id_coleccion
 

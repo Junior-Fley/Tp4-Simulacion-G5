@@ -23,7 +23,7 @@ class FinAtencion(Evento):
         # 1 - Actualizo la hora
         simulacion.hora_actual = simulacion.hora_proximo_fin_atencion
 
-        if simulacion.hora_actual > simulacion.hora_final:
+        if simulacion.hora_actual > simulacion.hora_cierre:
             simulacion.clientes_no_atendidos = simulacion.cola_clientes.cantidad()
             simulacion.cola_clientes.vaciar()
 
@@ -34,7 +34,6 @@ class FinAtencion(Evento):
         simulacion.rnd_presupuesto = random.random()
 
         simulacion.presupuesto = "Normal"
-        simulacion.tiempo_hasta_reparacion = None #TODO revisar esto
 
         simulacion.acepto = True
         if simulacion.rnd_presupuesto < 0.3:
