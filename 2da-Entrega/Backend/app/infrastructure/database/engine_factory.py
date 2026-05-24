@@ -9,7 +9,7 @@ _DEFAULT_KWARGS = dict(
     max_overflow=20,
     pool_pre_ping=True,
     pool_recycle=1800,      # 30 min
-    echo=True,
+    echo=False,
     isolation_level="SERIALIZABLE",
 )
 

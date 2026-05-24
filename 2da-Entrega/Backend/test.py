@@ -8,4 +8,4 @@ def minutos_a_hora(minutos: float) -> str:
     return f"{horas:02d}:{minutos_restantes:02d}:{segundos:02d}"
 
 
-print(minutos_a_hora(1080))
+print(minutos_a_hora(650.5))

@@ -1,6 +1,8 @@
 import math
 import random
 
+
+
 from app.domain.models.ColaFIFO import ColaFIFO
 from app.domain.models.event.Evento import Evento
 from app.domain.models.Tecnico import Tecnico

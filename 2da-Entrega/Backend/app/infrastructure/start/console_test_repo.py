@@ -6,7 +6,7 @@ class ConsoleTestRepo(ISimulacionRepository):
     def __init__(self):
         pass
 
-    def guardar_fila(self, hora: str, evento: str, rnd_llegada: float, tiempo_entre_llegadas: str,
+    def guardar_fila(self,coleccion_id, hora: str, evento: str, rnd_llegada: float, tiempo_entre_llegadas: str,
                      hora_proxima_llegada: str, estado_tecnico: str, rnd_atencion: float, duracion_atencion: str,
                      proximo_fin_atencion: str, rnd_presupuesto: float, presupuesto: str, rnd_acepta_reparar: float,
                      deja_para_reparar: bool|None, rnd_reparacion: float, duracion_reparacion: str,

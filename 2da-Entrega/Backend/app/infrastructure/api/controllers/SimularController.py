@@ -31,7 +31,17 @@ def iniciar_simulacion(payload: SimularRequest):
     simulador = Simular(uow_factory, x_tiempo=payload.x_tiempo, i_iteraciones=payload.i_iteraciones, j_hora_inicio=payload.j_hora_inicio)
 
     # Nota: esto ejecuta síncrono la simulación. Si tarda, la petición bloqueará hasta terminar.
+    #coleccion_id = simulador.ejecutar_simulacion()
+
+    import time
+    start = time.perf_counter()
     coleccion_id = simulador.ejecutar_simulacion()
+    elapsed = time.perf_counter() - start
+    print()
+    print()
+    print()
+    print(f"Duración simulación id {coleccion_id}: {elapsed:.4f} segundos")
+
 
     return SimulacionCreatedResponse(
         mensaje="Simulación ejecutada correctamente",
