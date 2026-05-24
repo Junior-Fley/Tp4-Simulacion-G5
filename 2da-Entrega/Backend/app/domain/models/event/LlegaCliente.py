@@ -31,14 +31,6 @@ class LlegaCliente(Evento):
         cliente = Cliente(EstadoCliente.EN_COLA, simulacion.hora_actual, None, None)
         simulacion.cola_clientes.agregar(cliente)
 
-        # 3- Calculo la próxima llegada de un cliente sólo si no se pasó de hora
-        if simulacion.hora_actual >= simulacion.hora_final:
-            simulacion.clientes_no_atendidos = simulacion.cola_clientes.cantidad()
-            simulacion.cola_clientes.vaciar()
-            # delegar la elección de próximo evento (si hay equipos para reparar) y cortar:
-            self.comprobar_hora_final(simulacion)
-            return
-
         simulacion.rnd_llegada = random.random()
         simulacion.tiempo_hasta_proxima_llegada = simulacion.exponencial_negativa(simulacion.media_llegada, simulacion.rnd_llegada)
         simulacion.hora_proxima_llegada = simulacion.hora_actual + simulacion.tiempo_hasta_proxima_llegada
@@ -53,6 +45,11 @@ class LlegaCliente(Evento):
             simulacion.tiempo_hasta_fin_de_atencion = simulacion.uniforme(simulacion.rnd_atencion, simulacion.min_atencion, simulacion.max_atencion)
             simulacion.hora_proximo_fin_atencion = simulacion.hora_actual + simulacion.tiempo_hasta_fin_de_atencion
 
+
+        # 3- Calculo la próxima llegada de un cliente sólo si no se pasó de hora
+        if simulacion.hora_actual >= simulacion.hora_final:
+            simulacion.clientes_no_atendidos = simulacion.cola_clientes.cantidad()
+            simulacion.cola_clientes.vaciar()
         #------------------------------------------ fin generación de la fila de la simulación ------------------------------------------
         # para este punto ya se generó toda la fila de la simulación, entonces ahora se debe decidir cuál va a ser el próximo evento que se va a ejecutar
 
