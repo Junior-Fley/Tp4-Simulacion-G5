@@ -8,15 +8,14 @@ from app.domain.models.EstadoTecnico import EstadoTecnico
 from app.domain.models.event.LlegaCliente import LlegaCliente
 from app.application.ports.Simulacion_repository import ISimulacionRepository
 from app.infrastructure.database.unit_of_work.unit_of_work_impl import UowFactory
-from domain.models.event.FinReparacion import FinReparacion
-
-from infrastructure.database.unit_of_work.unit_of_work import IUnitOfWork
+from app.infrastructure.database.unit_of_work.unit_of_work import IUnitOfWork
 
 
 
 class Simular:
     def __init__(self, uow_factory: UowFactory, x_tiempo: float, i_iteraciones: int, j_hora_inicio: float = 600, repo_override: ISimulacionRepository|None = None): #600 == 10:00 AM
 
+        self.id_coleccion: int = -1
         self.repo_override: ISimulacionRepository = repo_override
         self.uow_factory: UowFactory = uow_factory
 
@@ -74,7 +73,7 @@ class Simular:
 
     def guardar_fila_reparacion(self, uow: IUnitOfWork):
         if self.cola_equipos.cantidad() == 0:
-            uow.simu_repo.guardar_fin_reparacion_no_hay_equipos(self.float_a_hora(self.hora_actual),
+            uow.simu_repo.guardar_fin_reparacion_no_hay_equipos(self.id_coleccion, self.float_a_hora(self.hora_actual),
                                                                 self.evento.nombre,
                                                                 self.float_a_hora(self.hora_proxima_llegada),
                                                                 self.tecnico.estado.value,
@@ -86,7 +85,7 @@ class Simular:
                                                                 self.cola_clientes,
                                                                 self.cola_equipos)
         elif self.cola_equipos.cantidad() > 0:
-            uow.simu_repo.guardar_fin_reparacion_hay_equipos(self.float_a_hora(self.hora_actual),
+            uow.simu_repo.guardar_fin_reparacion_hay_equipos(self.id_coleccion, self.float_a_hora(self.hora_actual),
                                                              self.evento.nombre,
                                                              self.float_a_hora(self.hora_proxima_llegada),
                                                              self.tecnico.estado.value,
@@ -103,7 +102,7 @@ class Simular:
     def guardar_fila_atencion(self, uow: IUnitOfWork):
         if self.cola_clientes.cantidad() == 0 and self.cola_equipos.cantidad() == 0:
             # si el cliente que atendí era el último en la cola, entonces no hay un próximo cliente para atender, por lo tanto no se le calcula el tiempo de atención al próximo cliente, y se guarda la fila en la BDD, sin tiempo de atención
-            uow.simu_repo.guardar_fin_atencion_no_hay_clientes(self.float_a_hora(self.hora_actual),
+            uow.simu_repo.guardar_fin_atencion_no_hay_clientes(self.id_coleccion, self.float_a_hora(self.hora_actual),
                                                                self.evento.nombre,
                                                                self.float_a_hora(self.hora_proxima_llegada),
                                                                self.tecnico.estado.value,
@@ -120,7 +119,7 @@ class Simular:
                                                                self.cola_equipos)
         elif self.cola_clientes.cantidad() > 0:
             # si el cliente que atendí no era el último en la cola, entonces hay un próximo cliente para atender, por lo tanto se le calcula el tiempo de atención al próximo cliente, y se guarda la fila en la BDD, con tiempo de atención
-            uow.simu_repo.guardar_fin_atencion_hay_clientes(self.float_a_hora(self.hora_actual),
+            uow.simu_repo.guardar_fin_atencion_hay_clientes(self.id_coleccion, self.float_a_hora(self.hora_actual),
                                                             self.evento.nombre,
                                                             self.float_a_hora(self.hora_proxima_llegada),
                                                             self.tecnico.estado.value,
@@ -142,7 +141,7 @@ class Simular:
         elif self.cola_clientes.cantidad() == 0 and self.cola_equipos.cantidad() > 0:
             # si el cliente que atendí era el último en la cola, pero hay equipos en la cola de reparación, entonces no hay un próximo cliente para atender, por lo tanto no se le calcula el tiempo de atención al próximo cliente, y se guarda la fila en la BDD, sin tiempo de atención
             # pero el próximo evento es la reparación de un equipo, entonces se le calcula el tiempo de reparación al próximo equipo, y se guarda la fila en la BDD, con tiempo de reparación
-            uow.simu_repo.guardar_fin_atencion_hay_equipos(self.float_a_hora(self.hora_actual),
+            uow.simu_repo.guardar_fin_atencion_hay_equipos(self.id_coleccion, self.float_a_hora(self.hora_actual),
                                                            self.evento.nombre,
                                                            self.float_a_hora(self.hora_proxima_llegada),
                                                            self.tecnico.estado.value,
@@ -162,7 +161,7 @@ class Simular:
     def guardar_fila_llega_cliente(self, uow: IUnitOfWork):
 
         if self.hora_actual > self.hora_final and self.cola_equipos.cantidad() > 0:
-            uow.simu_repo.guardar_llega_cliente_repara(self.float_a_hora(self.hora_actual),
+            uow.simu_repo.guardar_llega_cliente_repara(self.id_coleccion, self.float_a_hora(self.hora_actual),
                                                        self.evento.nombre,
                                                        round(self.rnd_llegada,3),
                                                        self.float_a_hora(self.tiempo_hasta_proxima_llegada),
@@ -179,14 +178,14 @@ class Simular:
                                                        self.cola_equipos)
             return
         elif self.hora_actual > self.hora_final and self.cola_equipos.cantidad() == 0:
-            uow.simu_repo.guardar_llega_cliente_repara(self.float_a_hora(self.hora_actual),
+            uow.simu_repo.guardar_llega_cliente_repara(self.id_coleccion, self.float_a_hora(self.hora_actual),
                                                        self.evento.nombre,
                                                        round(self.rnd_llegada, 3),
                                                        self.float_a_hora(self.tiempo_hasta_proxima_llegada),
                                                        self.float_a_hora(self.hora_proxima_llegada),
                                                        self.tecnico.estado.value,
                                                        round(self.rnd_reparacion, 3),
-                                                       None,
+                                                       '',
                                                        self.cola_clientes.cantidad(),
                                                        self.cola_equipos.cantidad(),
                                                        self.float_a_hora(self.tecnico.acum_atencion),
@@ -199,7 +198,7 @@ class Simular:
 
         if self.cola_clientes.cantidad() == 1:
             # si el cliente que acaba de llegar es el único en la cola, entonces se atiende inmediatamente, se le calcula el tiempo de atención, y se guarda la fila en la BDD, con tiempo de atención
-            uow.simu_repo.guardar_llega_cliente_atiende(self.float_a_hora(self.hora_actual),
+            uow.simu_repo.guardar_llega_cliente_atiende(self.id_coleccion, self.float_a_hora(self.hora_actual),
                                                         self.evento.nombre,
                                                         round(self.rnd_llegada,3),
                                                         self.float_a_hora(self.tiempo_hasta_proxima_llegada),
@@ -217,7 +216,7 @@ class Simular:
                                                         self.cola_equipos)
         else:
             # si el cliente no es el primero en la cola, entonces no se atiende inmediatamente, no se le calcula el tiempo de atención, y se guarda la fila en la BDD, sin tiempo de atención
-            uow.simu_repo.guardar_llega_cliente_no_atiende(self.float_a_hora(self.hora_actual),
+            uow.simu_repo.guardar_llega_cliente_no_atiende(self.id_coleccion, self.float_a_hora(self.hora_actual),
                                                            self.evento.nombre,
                                                            round(self.rnd_llegada,3),
                                                            self.float_a_hora(self.tiempo_hasta_proxima_llegada),
@@ -232,7 +231,10 @@ class Simular:
                                                            self.cola_clientes,
                                                            self.cola_equipos)
 
-    def ejecutar_simulacion(self):
+    def ejecutar_simulacion(self) -> int:
+        # creamos la nueva colección de simulaciones en la bdd
+        with self.uow_factory() as uow:
+            self.id_coleccion = uow.colec_repo.guardar_coleccion()
 
         # al iniciar una nueva simulación inicializo las colas, para asegurarme que están vacías
         self.cola_equipos = ColaFIFO()
@@ -261,7 +263,7 @@ class Simular:
                 uow.simu_repo = self.repo_override
 
 
-            uow.simu_repo.guardar_fila(self.float_a_hora(self.hora_actual),
+            uow.simu_repo.guardar_fila(self.id_coleccion, self.float_a_hora(self.hora_actual),
                                        'Abre Tienda',
                                        round(self.rnd_llegada,3),
                                        self.float_a_hora(self.tiempo_hasta_proxima_llegada),
@@ -321,5 +323,6 @@ class Simular:
                     self.evento = self.proximo_evento
 
 
+        return self.id_coleccion
 
 

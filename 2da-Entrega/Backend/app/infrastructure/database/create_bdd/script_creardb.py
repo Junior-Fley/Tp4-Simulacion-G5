@@ -1,5 +1,3 @@
-# python
-# scripts/create_db.py
 from sqlalchemy import create_engine
 from app.infrastructure.database.create_bdd import declaracion_bdd as models
 

@@ -1,7 +1,7 @@
-from sqlalchemy import Integer, String, Float, Boolean
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Integer, String, Float, Boolean, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from infrastructure.database.base import Base
+from app.infrastructure.database.base import Base
 
 
 class SimulacionORM(Base):
@@ -11,6 +11,17 @@ class SimulacionORM(Base):
         Integer,
         primary_key=True,
         autoincrement=True
+    )
+
+    coleccion_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey('coleccion_simulaciones.id'),
+        nullable=False
+    )
+
+    coleccion = relationship(
+        "ColeccionORM",
+        back_populates="simulaciones"
     )
 
     hora: Mapped[str] = mapped_column(

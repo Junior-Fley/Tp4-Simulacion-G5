@@ -1,14 +1,31 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean
-from sqlalchemy.orm import declarative_base
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey
+from sqlalchemy.orm import declarative_base, relationship
 
 
 Base = declarative_base()
+
+class ColeccionSimulaciones(Base):
+    __tablename__ = 'coleccion_simulaciones'
+
+    id = Column(Integer, primary_key=True)
+
+    simulaciones = relationship(
+        "Simulacion",
+        back_populates="coleccion",
+        cascade="all, delete-orphan"
+    )
 
 
 class Simulacion(Base):
     __tablename__ = 'simulacion'
 
     id = Column(Integer, primary_key=True)
+    coleccion_id = Column(Integer, ForeignKey('coleccion_simulaciones.id'), nullable=False)
+
+    coleccion = relationship(
+        "ColeccionSimulaciones",
+        back_populates="simulaciones"
+    )
     hora = Column(String)
     evento = Column(String)
     rnd_llegada = Column(Float)

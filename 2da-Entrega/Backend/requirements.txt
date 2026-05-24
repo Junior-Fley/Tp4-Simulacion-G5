@@ -11,5 +11,4 @@ freezegun>=1.5.5
 SQLAlchemy>=2.0
 aiosqlite>=0.18.0
 alembic>=1.11.0
-
-
+pydantic

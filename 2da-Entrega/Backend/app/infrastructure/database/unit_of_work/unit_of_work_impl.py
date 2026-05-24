@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.infrastructure.database.unit_of_work.unit_of_work import IUnitOfWork
 from app.infrastructure.database.repositories.Simulacion_repository_impl import SimulacionRepositoryImpl
-
+from app.infrastructure.database.repositories.Coleccion_repository_impl import ColeccionRepositoryImpl
 
 SessionFactory = Callable[[], Session]
 
@@ -19,11 +19,13 @@ class SqlAlchemyUnitOfWork(IUnitOfWork):
         # propiedades inicializadas en __enter__
         self.session: Session
         self.simu_repo: SimulacionRepositoryImpl
+        self.colec_repo: ColeccionRepositoryImpl
 
     # Context manager
     def __enter__(self) -> 'SqlAlchemyUnitOfWork':
         self.session: Session = self._sf()  # nueva Session por acción
         self.simu_repo: SimulacionRepositoryImpl = SimulacionRepositoryImpl(self.session)
+        self.colec_repo: ColeccionRepositoryImpl = ColeccionRepositoryImpl(self.session)
         return self
 
     def __exit__(self, exc_type, exc, tb) -> None:
@@ -35,8 +37,8 @@ class SqlAlchemyUnitOfWork(IUnitOfWork):
         finally:
             self.session.close()
             self.session = None
-            self.product_repo = None
-            self.sale_repo = None
+            self.simu_repo = None
+            self.colec_repo = None
 
 
     def commit(self) -> None:
