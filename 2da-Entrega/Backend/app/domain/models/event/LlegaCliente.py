@@ -6,7 +6,7 @@ import random
 
 from typing import TYPE_CHECKING
 
-from domain.models.EstadoTecnico import EstadoTecnico
+from app.domain.models.EstadoTecnico import EstadoTecnico
 
 
 if TYPE_CHECKING:

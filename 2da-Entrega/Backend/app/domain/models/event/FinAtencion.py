@@ -6,7 +6,7 @@ from app.domain.models.EstadoEquipo import EstadoEquipo
 
 from typing import TYPE_CHECKING
 
-from domain.models.EstadoTecnico import EstadoTecnico
+from app.domain.models.EstadoTecnico import EstadoTecnico
 
 if TYPE_CHECKING:
     from app.application.useCases.Simular import Simular
