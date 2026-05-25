@@ -1,0 +1,8 @@
+from abc import ABC, abstractmethod
+
+
+class IColeccionRepository(ABC):
+
+    @abstractmethod
+    def guardar_coleccion(self) -> int:
+        pass
