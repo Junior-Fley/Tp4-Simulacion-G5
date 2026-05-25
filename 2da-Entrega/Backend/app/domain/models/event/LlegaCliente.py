@@ -55,7 +55,7 @@ class LlegaCliente(Evento):
 
         simulacion.tecnico.estado = EstadoTecnico.ATENDIENDO_CLIENTE
 
-        if simulacion.cola_clientes.primero().estado == EstadoCliente.EN_COLA.value:
+        if simulacion.cola_clientes.primero().estado == EstadoCliente.EN_COLA.value or simulacion.hora_proximo_fin_atencion is None :
 
             primero = simulacion.cola_clientes.primero()
             primero.estado = EstadoCliente.SIENDO_ATENDIDO.value
