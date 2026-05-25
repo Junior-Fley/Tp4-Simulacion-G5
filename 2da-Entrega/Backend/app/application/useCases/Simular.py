@@ -1,7 +1,6 @@
 import math
 import random
 from typing import List, Tuple, Any
-
 from app.domain.models.ColaFIFO import ColaFIFO
 from app.domain.models.event.Evento import Evento
 from app.domain.models.Tecnico import Tecnico
@@ -9,7 +8,6 @@ from app.domain.models.EstadoTecnico import EstadoTecnico
 from app.domain.models.event.LlegaCliente import LlegaCliente
 from app.application.ports.Simulacion_repository import ISimulacionRepository
 from app.infrastructure.database.unit_of_work.unit_of_work_impl import UowFactory
-from app.infrastructure.database.unit_of_work.unit_of_work import IUnitOfWork
 
 from app.domain.models.event.AbreTienda import AbreTienda
 from app.domain.models.event.FinReparacion import FinReparacion
