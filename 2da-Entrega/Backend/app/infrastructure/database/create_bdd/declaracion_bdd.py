@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, JSON
 from sqlalchemy.orm import declarative_base, relationship
 
 
@@ -46,8 +46,8 @@ class Simulacion(Base):
     tiempo_de_atencion_total = Column(String)
     tiempo_de_reparacion_total = Column(String)
     clientes_no_atendidos = Column(Integer)
-    clientes = Column(String)
-    equipos = Column(String)
+    clientes = Column(JSON)
+    equipos = Column(JSON)
 
 
 class Clientes(Base):

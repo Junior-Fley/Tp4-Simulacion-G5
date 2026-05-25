@@ -1,4 +1,4 @@
-from sqlalchemy import Integer, String, Float, Boolean, ForeignKey
+from sqlalchemy import Integer, String, Float, Boolean, ForeignKey, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.database.base import Base
@@ -124,12 +124,12 @@ class SimulacionORM(Base):
         nullable=True
     )
 
-    clientes: Mapped[str] = mapped_column(
-        String,
+    clientes: Mapped[list[dict]] = mapped_column(
+        JSON,
         nullable=True
     )
 
-    equipos: Mapped[str] = mapped_column(
-        String,
+    equipos: Mapped[list[dict]] = mapped_column(
+        JSON,
         nullable=True
     )

@@ -8,9 +8,10 @@ from app.domain.models.EstadoTecnico import EstadoTecnico
 from app.domain.models.event.LlegaCliente import LlegaCliente
 from app.application.ports.Simulacion_repository import ISimulacionRepository
 from app.infrastructure.database.unit_of_work.unit_of_work_impl import UowFactory
-
 from app.domain.models.event.AbreTienda import AbreTienda
 from app.domain.models.event.FinReparacion import FinReparacion
+from app.domain.models.ColaClientes import ColaClientes
+from app.domain.models.ColaEquipos import ColaEquipos
 
 
 class Simular:
@@ -56,15 +57,15 @@ class Simular:
         self.proximo_evento: Evento|None = None
         self.tecnico: Tecnico| None = None
         self.cierre: bool = False
-        self.cola_equipos: ColaFIFO = ColaFIFO()
-        self.cola_clientes: ColaFIFO = ColaFIFO()
+        self.cola_equipos: ColaFIFO = ColaEquipos()
+        self.cola_clientes: ColaFIFO = ColaClientes()
 
         self.hora_apertura = self.j_hora_inicio
         self.hora_cierre = 1080
         self.local_abierto = True
 
-        self.clientes_acumulador = 0
-        self.equipos_acumulador = 0
+        self.contador_clientes: int = 0
+        self.contador_equipos: int = 0
 
     def abrir_tienda(self):
         self.local_abierto = True
@@ -99,84 +100,59 @@ class Simular:
 
         return f"{horas:02d}:{minutos_restantes:02d}:{segundos:02d}"
 
-    def serializar_clientes(self):
-        clientes = []
-        for i, cliente in enumerate(self.cola_clientes.elementos, start=1):
-            clientes.append({
-                "id": self.clientes_acumulador,
-                "estado": cliente.estado.value if hasattr(cliente.estado, "value") else cliente.estado
-            })
-            self.clientes_acumulador += 1
-        return clientes
-
-    def serializar_equipos(self):
-        equipos = []
-        for i, equipo in enumerate(self.cola_equipos.elementos, start=1):
-            equipos.append({
-                "id": self.equipos_acumulador,
-                "estado": equipo.estado.value if hasattr(equipo.estado, "value") else equipo.estado,
-                "hora_dejado": self.float_a_hora(
-                    equipo.hora_ingreso_taller) if equipo.hora_ingreso_taller is not None else "",
-                "hora_fin": self.float_a_hora(
-                    equipo.horario_fin_reparacion) if equipo.horario_fin_reparacion is not None else "",
-                "tiempo": self.float_a_hora(
-                    equipo.tiempo_de_reparacion) if equipo.tiempo_de_reparacion is not None else ""
-            })
-            self.equipos_acumulador += 1
-        return equipos
 
     def guardar_fila_reparacion(self,):
         if self.cola_equipos.cantidad() == 0:
             self.filas_a_guardar.append((self.id_coleccion, self.float_a_hora(self.hora_actual), self.evento.nombre, -1,
                                '', self.float_a_hora(self.hora_proxima_llegada),
-                               self.tecnico.estado.value, -1, '','', -1,
+                               self.tecnico.estado, -1, '','', -1,
                                '', -1, None, -1, '',
                                self.cola_clientes.cantidad(), self.cola_equipos.cantidad(),
                                self.float_a_hora(self.tecnico.acum_atencion), self.float_a_hora(self.tecnico.acum_reparacion),
-                               self.clientes_no_atendidos, self.serializar_clientes(), self.serializar_equipos()))
+                               self.clientes_no_atendidos, self.cola_clientes.serialize(), self.cola_equipos.serialize()))
 
 
         elif self.cola_equipos.cantidad() > 0:
             self.filas_a_guardar.append((self.id_coleccion, self.float_a_hora(self.hora_actual), self.evento.nombre, -1,
                                '', self.float_a_hora(self.hora_proxima_llegada),
-                               self.tecnico.estado.value, -1, '','', -1,
+                               self.tecnico.estado, -1, '','', -1,
                                '', -1, None, self.rnd_reparacion, self.float_a_hora(self.tiempo_hasta_reparacion),
                                self.cola_clientes.cantidad(), self.cola_equipos.cantidad(),
                                self.float_a_hora(self.tecnico.acum_atencion), self.float_a_hora(self.tecnico.acum_reparacion),
                                self.clientes_no_atendidos,
-                               self.serializar_clientes(), self.serializar_equipos()))
+                               self.cola_clientes.serialize(), self.cola_equipos.serialize()))
 
     def guardar_fila_atencion(self):
         if self.cola_clientes.cantidad() == 0 and self.cola_equipos.cantidad() == 0:
             # si el cliente que atendí era el último en la cola, entonces no hay un próximo cliente para atender, por lo tanto no se le calcula el tiempo de atención al próximo cliente, y se guarda la fila en la BDD, sin tiempo de atención
             self.filas_a_guardar.append((self.id_coleccion, self.float_a_hora(self.hora_actual), self.evento.nombre, -1,
                                '', self.float_a_hora(self.hora_proxima_llegada),
-                               self.tecnico.estado.value, -1, '', '', self.rnd_presupuesto,
+                               self.tecnico.estado, -1, '', '', self.rnd_presupuesto,
                                self.presupuesto, self.rnd_acepta, self.acepto, -1, '',
                                self.cola_clientes.cantidad(), self.cola_equipos.cantidad(),
                                self.float_a_hora(self.tecnico.acum_atencion),
                                self.float_a_hora(self.tecnico.acum_reparacion),
                                self.clientes_no_atendidos,
-                               self.serializar_clientes(), self.serializar_equipos()))
+                               self.cola_clientes.serialize(), self.cola_equipos.serialize()))
         elif self.cola_clientes.cantidad() > 0:
             # si el cliente que atendí no era el último en la cola, entonces hay un próximo cliente para atender, por lo tanto se le calcula el tiempo de atención al próximo cliente, y se guarda la fila en la BDD, con tiempo de atención
             self.filas_a_guardar.append((self.id_coleccion, self.float_a_hora(self.hora_actual), self.evento.nombre, -1,
                                '', self.float_a_hora(self.hora_proxima_llegada),
-                               self.tecnico.estado.value, self.rnd_atencion, self.float_a_hora(self.tiempo_hasta_fin_de_atencion),
+                               self.tecnico.estado, self.rnd_atencion, self.float_a_hora(self.tiempo_hasta_fin_de_atencion),
                                self.float_a_hora(self.hora_proximo_fin_atencion), self.rnd_presupuesto,
                                self.presupuesto, self.rnd_acepta, self.acepto, -1, '',
                                self.cola_clientes.cantidad(), self.cola_equipos.cantidad(),
                                self.float_a_hora(self.tecnico.acum_atencion),
                                self.float_a_hora(self.tecnico.acum_reparacion),
                                self.clientes_no_atendidos,
-                               self.serializar_clientes(), self.serializar_equipos()))
+                               self.cola_clientes.serialize(), self.cola_equipos.serialize()))
 
         elif self.cola_clientes.cantidad() == 0 and self.cola_equipos.cantidad() > 0:
             # si el cliente que atendí era el último en la cola, pero hay equipos en la cola de reparación, entonces no hay un próximo cliente para atender, por lo tanto no se le calcula el tiempo de atención al próximo cliente, y se guarda la fila en la BDD, sin tiempo de atención
             # pero el próximo evento es la reparación de un equipo, entonces se le calcula el tiempo de reparación al próximo equipo, y se guarda la fila en la BDD, con tiempo de reparación
             self.filas_a_guardar.append((self.id_coleccion, self.float_a_hora(self.hora_actual), self.evento.nombre, -1, '',
                                self.float_a_hora(self.hora_proxima_llegada),
-                               self.tecnico.estado.value, -1, '', '',self.rnd_presupuesto, self.presupuesto,
+                               self.tecnico.estado, -1, '', '',self.rnd_presupuesto, self.presupuesto,
                                self.rnd_acepta,
                                self.acepto,
                                self.rnd_reparacion, self.float_a_hora(self.tiempo_hasta_reparacion),
@@ -184,34 +160,34 @@ class Simular:
                                self.float_a_hora(self.tecnico.acum_atencion),
                                self.float_a_hora(self.tecnico.acum_reparacion),
                                self.clientes_no_atendidos,
-                               self.serializar_clientes(), self.serializar_equipos()))
+                               self.cola_clientes.serialize(), self.cola_equipos.serialize()))
 
     def guardar_fila_llega_cliente(self):
 
         if self.hora_actual > self.hora_cierre and self.cola_equipos.cantidad() > 0:
             self.filas_a_guardar.append((self.id_coleccion, self.float_a_hora(self.hora_actual), self.evento.nombre,
                                          self.rnd_llegada, self.float_a_hora(self.tiempo_hasta_proxima_llegada),
-                                         self.float_a_hora(self.hora_proxima_llegada), self.tecnico.estado.value,
+                                         self.float_a_hora(self.hora_proxima_llegada), self.tecnico.estado,
                                          -1, '', '', -1, '', -1,
                                          None, self.rnd_reparacion, self.float_a_hora(self.tiempo_hasta_reparacion),
                                          self.cola_clientes.cantidad(), self.cola_equipos.cantidad(),
                                          self.float_a_hora(self.tecnico.acum_atencion),
                                          self.float_a_hora(self.tecnico.acum_reparacion),
                                          self.clientes_no_atendidos,
-                                         self.serializar_clientes(), self.serializar_equipos()))
+                                         self.cola_clientes.serialize(), self.cola_equipos.serialize()))
             return
 
         elif self.hora_actual > self.hora_cierre and self.cola_equipos.cantidad() == 0:
             self.filas_a_guardar.append((self.id_coleccion, self.float_a_hora(self.hora_actual), self.evento.nombre,
                                          self.rnd_llegada, self.float_a_hora(self.tiempo_hasta_proxima_llegada),
-                                         self.float_a_hora(self.hora_proxima_llegada), self.tecnico.estado.value,
+                                         self.float_a_hora(self.hora_proxima_llegada), self.tecnico.estado,
                                          -1, '', '', -1, '', -1,
                                          None, self.rnd_reparacion, '',
                                          self.cola_clientes.cantidad(), self.cola_equipos.cantidad(),
                                          self.float_a_hora(self.tecnico.acum_atencion),
                                          self.float_a_hora(self.tecnico.acum_reparacion),
                                          self.clientes_no_atendidos,
-                                         self.serializar_clientes(), self.serializar_equipos()))
+                                         self.cola_clientes.serialize(), self.cola_equipos.serialize()))
             return
 
 
@@ -219,26 +195,26 @@ class Simular:
             # si el cliente que acaba de llegar es el único en la cola, entonces se atiende inmediatamente, se le calcula el tiempo de atención, y se guarda la fila en la BDD, con tiempo de atención
             self.filas_a_guardar.append((self.id_coleccion, self.float_a_hora(self.hora_actual), self.evento.nombre,
                                          self.rnd_llegada, self.float_a_hora(self.tiempo_hasta_proxima_llegada),
-                                         self.float_a_hora(self.hora_proxima_llegada), self.tecnico.estado.value,
+                                         self.float_a_hora(self.hora_proxima_llegada), self.tecnico.estado,
                                          self.rnd_atencion, self.float_a_hora(self.tiempo_hasta_fin_de_atencion),
                                          self.float_a_hora(self.hora_proximo_fin_atencion), -1,'', -1, None, -1, '',
                                          self.cola_clientes.cantidad(), self.cola_equipos.cantidad(),
                                          self.float_a_hora(self.tecnico.acum_atencion),
                                          self.float_a_hora(self.tecnico.acum_reparacion),
                                          self.clientes_no_atendidos,
-                                         self.serializar_clientes(), self.serializar_equipos()))
+                                         self.cola_clientes.serialize(), self.cola_equipos.serialize()))
         else:
             # si el cliente no es el primero en la cola, entonces no se atiende inmediatamente, no se le calcula el tiempo de atención, y se guarda la fila en la BDD, sin tiempo de atención
             self.filas_a_guardar.append((self.id_coleccion, self.float_a_hora(self.hora_actual), self.evento.nombre,
                                          self.rnd_llegada, self.float_a_hora(self.tiempo_hasta_proxima_llegada),
-                                         self.float_a_hora(self.hora_proxima_llegada), self.tecnico.estado.value,
+                                         self.float_a_hora(self.hora_proxima_llegada), self.tecnico.estado,
                                          -1, '', self.float_a_hora(self.hora_proximo_fin_atencion), -1, '', -1,
                                          None, -1, '', self.cola_clientes.cantidad(),
                                          self.cola_equipos.cantidad(),
                                          self.float_a_hora(self.tecnico.acum_atencion),
                                          self.float_a_hora(self.tecnico.acum_reparacion),
                                          self.clientes_no_atendidos,
-                                         self.serializar_clientes(), self.serializar_equipos()))
+                                         self.cola_clientes.serialize(), self.cola_equipos.serialize()))
 
     def ejecutar_simulacion(self) -> int:
         # creamos la nueva colección de simulaciones en la bdd
@@ -246,8 +222,8 @@ class Simular:
             self.id_coleccion = uow.colec_repo.guardar_coleccion()
 
         # al iniciar una nueva simulación inicializo las colas, para asegurarme que están vacías
-        self.cola_equipos = ColaFIFO()
-        self.cola_clientes = ColaFIFO()
+        self.cola_equipos = ColaEquipos()
+        self.cola_clientes = ColaClientes()
 
         #region FILA 0
 
@@ -272,7 +248,7 @@ class Simular:
                 round(self.rnd_llegada, 3),
                 self.float_a_hora(self.tiempo_hasta_proxima_llegada),
                 self.float_a_hora(self.hora_proxima_llegada),
-                self.tecnico.estado.value,
+                self.tecnico.estado,
                 -1,
                 '', '',
                 -1,
@@ -280,7 +256,8 @@ class Simular:
                 -1,
                 '', 0, 0,
                 '', '', 0,
-                self.serializar_clientes(), self.serializar_equipos()
+                self.cola_clientes.serialize(),
+                self.cola_equipos.serialize()
             )
 
         # endregion FILA 0
@@ -340,9 +317,9 @@ class Simular:
                         self.float_a_hora(self.hora_actual),
                         self.evento.nombre,
                         round(self.rnd_llegada, 3),
-                        self.float_a_hora(self.tiempo_hasta_proxima_llegada) ,
+                        self.float_a_hora(self.tiempo_hasta_proxima_llegada),
                         self.float_a_hora(self.hora_proxima_llegada),
-                        self.tecnico.estado.value,
+                        self.tecnico.estado,
                         -1,
                         '',
                         '',
@@ -357,8 +334,8 @@ class Simular:
                         '',
                         '',
                         0,
-                        self.serializar_clientes(),
-                        self.serializar_equipos()
+                        self.cola_clientes.serialize(),
+                        self.cola_equipos.serialize()
                     ))
 
                     self.evento = self.proximo_evento

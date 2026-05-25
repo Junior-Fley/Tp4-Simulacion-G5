@@ -1,10 +1,7 @@
-import json
-
 from sqlalchemy.orm import Session
 from app.application.ports.Simulacion_repository import ISimulacionRepository
 from app.infrastructure.database.models.Simulacion_ORM import SimulacionORM
-from typing import Iterable, Tuple, Any
-
+from sqlalchemy import insert
 
 class SimulacionRepositoryImpl(ISimulacionRepository):
     def __init__(self, session: Session):
@@ -15,10 +12,7 @@ class SimulacionRepositoryImpl(ISimulacionRepository):
                      proximo_fin_atencion: str, rnd_presupuesto: float, presupuesto: str, rnd_acepta_reparar: float,
                      deja_para_reparar: bool|None, rnd_reparacion: float, duracion_reparacion: str,
                      cola_atencion_cantidad: int, cola_equipos_cantidad: int, tiempo_atencion_acum: str, tiempo_reparacion_acum: str,
-                     clientes_no_atendidos_por_cierre: int, cola_clientes: Any, cola_equipos: Any) -> None:
-
-        clientes_json = json.dumps(cola_clientes, default=str) if cola_clientes is not None else None
-        equipos_json = json.dumps(cola_equipos, default=str) if cola_equipos is not None else None
+                     clientes_no_atendidos_por_cierre: int, cola_clientes: list[dict], cola_equipos: list[dict]) -> None:
 
         simulacion = SimulacionORM(coleccion_id=coleccion_id,
                                    hora=hora,
@@ -41,11 +35,10 @@ class SimulacionRepositoryImpl(ISimulacionRepository):
                                    tiempo_de_atencion_total=tiempo_atencion_acum,
                                    tiempo_de_reparacion_total=tiempo_reparacion_acum,
                                    clientes_no_atendidos=clientes_no_atendidos_por_cierre,
-                                   clientes=clientes_json,
-                                   equipos=equipos_json)
+                                   clientes=cola_clientes,
+                                   equipos=cola_equipos)
 
         self.session.add(simulacion)
-        self.session.flush()
 
     def obtener_filas_simulacion(self, coleccion_id: int, page: int, size: int):
         query = self.session.query(SimulacionORM).filter_by(coleccion_id=coleccion_id)
@@ -53,37 +46,40 @@ class SimulacionRepositoryImpl(ISimulacionRepository):
         items = query.order_by(SimulacionORM.id).offset((page - 1) * size).limit(size).all()
         return items, total
 
-
-    def guardar_filas_bulk(self, filas: Iterable[Tuple[int, str, str, float, str, str, str, float, str, str,
-    float, str, float, bool | None, float, str, int, int, str, str, int, Any, Any]]
-    ) -> None:
-        objetos = [
-            SimulacionORM(
-                coleccion_id=f[0],
-                hora=f[1],
-                evento=f[2],
-                rnd_llegada=f[3],
-                tiempo_entre_llegadas=f[4],
-                proxima_llegada=f[5],
-                estado_tecnico=f[6],
-                rnd_duracion_atencion=f[7],
-                duracion_atencion=f[8],
-                proximo_fin_atencion=f[9],
-                rnd_presupuesto=f[10],
-                presupuesto=f[11],
-                rnd_deja_equipo=f[12],
-                deja_equipo=f[13],
-                rnd_duracion_reparacion=f[14],
-                duracion_reparacion=f[15],
-                fila_atencion_cantidad=f[16],
-                fila_equipos_cantidad=f[17],
-                tiempo_de_atencion_total=f[18],
-                tiempo_de_reparacion_total=f[19],
-                clientes_no_atendidos=f[20],
-                clientes=json.dumps(f[21], default=str) if f[21] is not None else None,
-                equipos=json.dumps(f[22], default=str) if f[22] is not None else None,
-            )
+    def guardar_filas_bulk(self, filas) -> None:
+        filas_dict = [
+            {
+                "coleccion_id": f[0],
+                "hora": f[1],
+                "evento": f[2],
+                "rnd_llegada": f[3],
+                "tiempo_entre_llegadas": f[4],
+                "proxima_llegada": f[5],
+                "estado_tecnico": f[6],
+                "rnd_duracion_atencion": f[7],
+                "duracion_atencion": f[8],
+                "proximo_fin_atencion": f[9],
+                "rnd_presupuesto": f[10],
+                "presupuesto": f[11],
+                "rnd_deja_equipo": f[12],
+                "deja_equipo": f[13],
+                "rnd_duracion_reparacion": f[14],
+                "duracion_reparacion": f[15],
+                "fila_atencion_cantidad": f[16],
+                "fila_equipos_cantidad": f[17],
+                "tiempo_de_atencion_total": f[18],
+                "tiempo_de_reparacion_total": f[19],
+                "clientes_no_atendidos": f[20],
+                "clientes": f[21],
+                "equipos": f[22],
+            }
             for f in filas
         ]
-        self.session.bulk_save_objects(objetos)
-        self.session.flush()
+
+        if not filas_dict:
+            return
+
+        self.session.execute(
+            insert(SimulacionORM.__table__),
+            filas_dict
+        )

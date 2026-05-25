@@ -1,8 +1,7 @@
+from domain.models.EstadoCliente import EstadoCliente
 
 
 class Cliente:
-    def __init__(self, estado, hora_llegada, horario_inicio_atencion, horario_fin_atencion):
-        self.estado = estado
-        self.hora_llegada = hora_llegada
-        self.horario_inicio_atencion = horario_inicio_atencion
-        self.horario_fin_atencion = horario_fin_atencion
+    def __init__(self, id_cliente: int, estado: EstadoCliente, ):
+        self.id_cliente: int = id_cliente
+        self.estado: str = estado.value

@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from collections import deque
 from dataclasses import dataclass, field
 
@@ -9,7 +10,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class ColaFIFO:
+class ColaFIFO(ABC):
     elementos: deque = field(default_factory=deque)
 
     def agregar(self, elemento):
@@ -42,3 +43,12 @@ class ColaFIFO:
 
     def vaciar(self):
         self.elementos.clear()
+
+    @abstractmethod
+    def serialize(self):
+        #este método devuelve una lista con diccionarios conteniendo cada uno de los elementos de la cola
+        pass
+
+    @abstractmethod
+    def marcar_dirty(self):
+        pass

@@ -31,6 +31,8 @@ class FinReparacion(Evento):
             simulacion.tecnico.acum_reparacion += simulacion.cola_equipos.primero().tiempo_reparacion_restante
 
             # Retiro el equipo que se acaba de reparar de la cola de equipos
+            # si retiro un equipo de la cola, el caché se vuelve dirty
+            simulacion.cola_equipos.marcar_dirty()
             simulacion.cola_equipos.retirar()
 
         # Ahora queda calcular cuál es el próximo evento a ejecutar

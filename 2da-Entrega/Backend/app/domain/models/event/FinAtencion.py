@@ -28,6 +28,8 @@ class FinAtencion(Evento):
             simulacion.cola_clientes.vaciar()
 
         # 2 - Elimino al cliente de la fila
+        # si retiro un cliente de la cola el caché se ensucia
+        simulacion.cola_clientes.marcar_dirty()
         simulacion.cola_clientes.retirar()
 
         # 3 - Se calcula si el cliente acepta la reparación o no
@@ -44,9 +46,12 @@ class FinAtencion(Evento):
 
         # 4 - Si aceptó, deja el dispositivo, por lo que lo agrego a la fila
         if simulacion.acepto:
-            nuevo_equipo = Equipo(EstadoEquipo.EN_COLA_REPARACION, simulacion.hora_actual, None,
+            simulacion.contador_equipos += 1
+            nuevo_equipo = Equipo(simulacion.contador_equipos, EstadoEquipo.EN_COLA_REPARACION, simulacion.hora_actual, None,
                                   None, None, 0)
 
+            # si agrego equipos a la cola, entonces mi caché de la cola de clientes se vuelve sucio, por lo que tengo que marcarlo como tal
+            simulacion.cola_equipos.marcar_dirty()
             simulacion.cola_equipos.agregar(nuevo_equipo)
 
         # 5 - Defino cuál es el próximo evento a ejecutar
