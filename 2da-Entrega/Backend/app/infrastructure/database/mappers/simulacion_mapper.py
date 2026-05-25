@@ -11,8 +11,25 @@ class SimulacionMapper:
         if orm is None:
             return None
 
-        clientes = json.loads(orm.clientes) if getattr(orm, "clientes", None) else None
-        equipos = json.loads(orm.equipos) if getattr(orm, "equipos", None) else None
+        # clientes puede venir como str (JSON) o ya como lista (SQLAlchemy JSON column)
+        raw_clientes = getattr(orm, "clientes", None)
+        if isinstance(raw_clientes, str):
+            try:
+                clientes = json.loads(raw_clientes)
+            except Exception:
+                clientes = None
+        else:
+            clientes = raw_clientes  # lista o None
+
+        # equipos puede venir como str (JSON) o ya como lista (SQLAlchemy JSON column)
+        raw_equipos = getattr(orm, "equipos", None)
+        if isinstance(raw_equipos, str):
+            try:
+                equipos = json.loads(raw_equipos)
+            except Exception:
+                equipos = None
+        else:
+            equipos = raw_equipos  # lista o None
 
         return Simulacion(
             simu_id=orm.id,
