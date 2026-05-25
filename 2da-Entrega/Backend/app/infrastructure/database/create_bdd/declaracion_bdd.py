@@ -46,6 +46,8 @@ class Simulacion(Base):
     tiempo_de_atencion_total = Column(String)
     tiempo_de_reparacion_total = Column(String)
     clientes_no_atendidos = Column(Integer)
+    clientes = Column(String)
+    equipos = Column(String)
 
 
 class Clientes(Base):

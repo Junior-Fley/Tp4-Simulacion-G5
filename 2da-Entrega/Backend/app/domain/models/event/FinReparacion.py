@@ -15,6 +15,8 @@ class FinReparacion(Evento):
 
     def ejecutar_accion(self, simulacion: Simular):
 
+        #TODO Revisar y que ande
+
         # Actualizo la hora actual con el tiempo restante de reparacion del equipo
         # que está primero en la cola de equipos
         if simulacion.cola_equipos.primero().tiempo_reparacion_restante is not None:

@@ -1,3 +1,4 @@
+import json
 from typing import Optional
 
 from app.infrastructure.database.models.Simulacion_ORM import SimulacionORM
@@ -9,6 +10,9 @@ class SimulacionMapper:
     def convert_orm_to_domain(orm: Optional[SimulacionORM]) -> Optional[Simulacion]:
         if orm is None:
             return None
+
+        clientes = json.loads(orm.clientes) if getattr(orm, "clientes", None) else None
+        equipos = json.loads(orm.equipos) if getattr(orm, "equipos", None) else None
 
         return Simulacion(
             simu_id=orm.id,
@@ -32,4 +36,6 @@ class SimulacionMapper:
             tiempo_de_atencion_total=orm.tiempo_de_atencion_total,
             tiempo_de_reparacion_total=orm.tiempo_de_reparacion_total,
             clientes_no_atendidos=orm.clientes_no_atendidos,
+            clientes=clientes,
+            equipos=equipos,
         )

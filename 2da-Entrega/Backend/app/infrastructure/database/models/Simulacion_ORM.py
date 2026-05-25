@@ -123,3 +123,13 @@ class SimulacionORM(Base):
         Integer,
         nullable=True
     )
+
+    clientes: Mapped[str] = mapped_column(
+        String,
+        nullable=True
+    )
+
+    equipos: Mapped[str] = mapped_column(
+        String,
+        nullable=True
+    )

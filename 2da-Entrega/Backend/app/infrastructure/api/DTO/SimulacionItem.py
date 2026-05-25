@@ -27,6 +27,8 @@ class SimulacionItem(BaseModel):
     tiempo_de_atencion_total: Optional[str] = None
     tiempo_de_reparacion_total: Optional[str] = None
     clientes_no_atendidos: Optional[int] = None
+    clientes: Optional[list] = None
+    equipos: Optional[list] = None
 
     @classmethod
     def from_domain(cls, simu_domain: Simulacion) -> "SimulacionItem":
@@ -52,4 +54,6 @@ class SimulacionItem(BaseModel):
             tiempo_de_atencion_total=getattr(simu_domain, "tiempo_de_atencion_total", None),
             tiempo_de_reparacion_total=getattr(simu_domain, "tiempo_de_reparacion_total", None),
             clientes_no_atendidos=getattr(simu_domain, "clientes_no_atendidos", None),
+            clientes=getattr(simu_domain, "clientes", None),
+            equipos=getattr(simu_domain, "equipos", None),
         )

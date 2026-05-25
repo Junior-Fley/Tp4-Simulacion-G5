@@ -25,6 +25,8 @@ class Simulacion:
         tiempo_de_atencion_total: Optional[str] = None,
         tiempo_de_reparacion_total: Optional[str] = None,
         clientes_no_atendidos: Optional[int] = None,
+        clientes: Optional[list] = None,
+        equipos: Optional[list] = None
     ) -> None:
         
         self.id = simu_id
@@ -48,6 +50,8 @@ class Simulacion:
         self.tiempo_de_atencion_total = tiempo_de_atencion_total
         self.tiempo_de_reparacion_total = tiempo_de_reparacion_total
         self.clientes_no_atendidos = clientes_no_atendidos
+        self.clientes = clientes
+        self.equipos = equipos
 
     def __repr__(self) -> str:
         return f"Simulacion(id={self.id}, hora={self.hora}, evento={self.evento})"
