@@ -28,7 +28,11 @@ class LlegaCliente(Evento):
 
         simulacion.hora_actual = simulacion.hora_proxima_llegada
 
-        cliente = Cliente(EstadoCliente.EN_COLA, simulacion.hora_actual, None, None)
+        simulacion.contador_clientes += 1
+        cliente = Cliente(simulacion.contador_clientes, EstadoCliente.EN_COLA)
+
+        # si agrego clientes a la cola, entonces mi caché de la cola de clientes se vuelve sucio, por lo que tengo que marcarlo como tal
+        simulacion.cola_clientes.marcar_dirty()
         simulacion.cola_clientes.agregar(cliente)
 
         simulacion.rnd_llegada = random.random()

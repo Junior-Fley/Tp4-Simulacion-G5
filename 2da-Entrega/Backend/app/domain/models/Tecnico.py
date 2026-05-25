@@ -4,10 +4,18 @@ from app.domain.models.EstadoTecnico import EstadoTecnico
 
 class Tecnico:
     def __init__(self, estado: EstadoTecnico, equipo_asignado: Equipo|None, acum_atencion: float, acum_reparacion: float):
-        self.estado: EstadoTecnico = estado
+        self._estado: str = estado.value
         self.equipo_asignado = equipo_asignado
         self.acum_atencion: float = acum_atencion # representa tiempo en decimal de minutos, debe convertirse a minutos para el reporte final
         self.acum_reparacion: float = acum_reparacion # representa tiempo en decimal de minutos, debe convertirse a minutos para el reporte final
+
+    @property
+    def estado(self):
+        return self._estado
+    @estado.setter
+    def estado(self, nuevo_estado: EstadoTecnico):
+        self._estado = nuevo_estado.value
+
 
     @staticmethod
     def _convertir_minutos_a_mmss(tiempo: float) -> str:
