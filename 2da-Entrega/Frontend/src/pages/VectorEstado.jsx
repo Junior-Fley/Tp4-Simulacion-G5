@@ -77,7 +77,9 @@ export const VectorEstado = () => {
           <option value="">Seleccionar simulación</option>
 
           {simulaciones.map((sim, index) => (
-            <option key={`${sim.id}-${index}`} value={sim.id}></option>
+            <option key={`${sim.id}-${index}`} value={sim.id}>
+              Simulación #{sim.id}
+            </option>
           ))}
         </select>
       </div>
