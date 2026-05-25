@@ -1,5 +1,6 @@
 import { useForm } from "react-hook-form";
 import { useState } from "react";
+import "../App.css";
 
 import simulacionService from "../service/simulacion.service";
 
@@ -138,28 +139,28 @@ const FormularioVar = () => {
 
     <main className="container mt-5">
 
-      <h4 className="mb-4">
-        Iniciar Simulación
-      </h4>
-       {/* MENSAJE */}
-      {mensaje && (
-        <div className={`alert alert-${tipoMensaje}`}>
-          {mensaje}
-        </div>
-      )}
+  <div className="sim-card">
 
+    <h4 className="sim-title">
+      Iniciar Simulación
+    </h4>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
+    {mensaje && (
+      <div className={`alert alert-${tipoMensaje}`}>
+        {mensaje}
+      </div>
+    )}
+
+    <form onSubmit={handleSubmit(onSubmit)} className="sim-form">
+
+      <div className="sim-row">
 
         {campo(
           "Tiempo de Simulación",
           "x_tiempo",
           "number",
           {
-            min: {
-              value: 1,
-              message: "Mínimo 1",
-            },
+            min: { value: 1, message: "Mínimo 1" },
           }
         )}
 
@@ -168,10 +169,7 @@ const FormularioVar = () => {
           "i_iteraciones",
           "number",
           {
-            min: {
-              value: 1,
-              message: "Mínimo 1",
-            },
+            min: { value: 1, message: "Mínimo 1" },
           }
         )}
 
@@ -181,19 +179,23 @@ const FormularioVar = () => {
           "time"
         )}
 
+      </div>
+
+      <div className="sim-actions">
         <button
           type="submit"
-          className="btn btn-primary mt-2"
+          className="btn btn-primary sim-btn"
           disabled={cargando}
         >
-          {cargando
-            ? "Generando simulación..."
-            : "Simular"}
+          {cargando ? "Generando..." : "Simular"}
         </button>
+      </div>
 
-      </form>
+    </form>
 
-    </main>
+  </div>
+
+</main>
   );
 };
 

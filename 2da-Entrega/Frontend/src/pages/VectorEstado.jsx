@@ -41,7 +41,6 @@ export const VectorEstado = () => {
   const mostrarValorVacioNAda = (valor) =>
     valor === -1 ? "" : valor;
 
-  // cargar lista de simulaciones 
   useEffect(() => {
     const sims = JSON.parse(
       localStorage.getItem("simulaciones") || "[]"
@@ -49,9 +48,7 @@ export const VectorEstado = () => {
     setSimulaciones(sims);
   }, []);
 
-  // cargar filas según simId VERRRR
   useEffect(() => {
-
     const cargarFilas = async () => {
       try {
         if (!simId) return;
@@ -70,16 +67,13 @@ export const VectorEstado = () => {
     };
 
     cargarFilas();
-
   }, [simId, page, size]);
 
   return (
-    <div className="tabla-container">
+    <div className="tabla-page">
 
-       {/*****************************************************************************/}
-      {/* SELECTOR DE SIMULACIONE */}
-      <div className="mb-3">
-
+      {/* SELECTOR */}
+      <div className="mb-3 tabla-selector">
         <select
           className="form-select"
           value={simId || ""}
@@ -90,190 +84,137 @@ export const VectorEstado = () => {
             setPage(1);
           }}
         >
-          <option value="">
-            Seleccionar simulación
-          </option>
+          <option value="">Seleccionar simulación</option>
 
           {simulaciones.map((sim) => (
             <option key={sim.id} value={sim.id}>
               Simulación #{sim.id}
             </option>
           ))}
-
         </select>
-
       </div>
 
-      {/* RESULTADOS */}
-      <div className="container mt-4">
-
-        <div className="row g-3">
+      {/* CARDS */}
+      <div className="container mt-3">
+        <div className="row g-3 justify-content-center">
 
           <div className="col-md-3">
-            <div className="card shadow-sm border-danger">
-
-              <div className="card-body text-center">
-
-                <h6 className="card-title">
-                  Clientes No Atendidos
-                </h6>
-
+            <div className="card shadow-sm border-danger text-center">
+              <div className="card-body">
+                <h6>Clientes No Atendidos</h6>
                 <h3>
-                  {
-                    filas.length > 0
-                      ? filas[filas.length - 1]
-                          .clientes_no_atendidos
-                      : 0
-                  }
+                  {filas.length > 0
+                    ? filas[filas.length - 1].clientes_no_atendidos
+                    : 0}
                 </h3>
-
               </div>
-
             </div>
           </div>
 
           <div className="col-md-3">
-            <div className="card shadow-sm border-primary">
-
-              <div className="card-body text-center">
-
-                <h6 className="card-title">
-                  Tiempo Atención Total
-                </h6>
-
+            <div className="card shadow-sm border-primary text-center">
+              <div className="card-body">
+                <h6>Tiempo Atención Total</h6>
                 <h3>
-                  {
-                    filas.length > 0
-                      ? filas[filas.length - 1]
-                          .tiempo_de_atencion_total
-                      : "00:00:00"
-                  }
+                  {filas.length > 0
+                    ? filas[filas.length - 1].tiempo_de_atencion_total
+                    : "00:00:00"}
                 </h3>
-
               </div>
-
             </div>
           </div>
 
           <div className="col-md-3">
-            <div className="card shadow-sm border-success">
-
-              <div className="card-body text-center">
-
-                <h6 className="card-title">
-                  Tiempo Reparación Total
-                </h6>
-
+            <div className="card shadow-sm border-success text-center">
+              <div className="card-body">
+                <h6>Tiempo Reparación Total</h6>
                 <h3>
-                  {
-                    filas.length > 0
-                      ? filas[filas.length - 1]
-                          .tiempo_de_reparacion_total
-                      : "00:00:00"
-                  }
+                  {filas.length > 0
+                    ? filas[filas.length - 1].tiempo_de_reparacion_total
+                    : "00:00:00"}
                 </h3>
-
               </div>
-
             </div>
           </div>
 
           <div className="col-md-3">
-            <div className="card shadow-sm border-dark">
-
-              <div className="card-body text-center">
-
-                <h6 className="card-title">
-                  Estado Final Técnico
-                </h6>
-
+            <div className="card shadow-sm border-dark text-center">
+              <div className="card-body">
+                <h6>Estado Técnico</h6>
                 <h3>
-                  {
-                    filas.length > 0
-                      ? filas[filas.length - 1]
-                          .estado_tecnico
-                      : "-"
-                  }
+                  {filas.length > 0
+                    ? filas[filas.length - 1].estado_tecnico
+                    : "-"}
                 </h3>
-
               </div>
-
             </div>
           </div>
+
+        </div>
+      </div>
+
+      {/* TABLA */}
+      <div className="tabla-card">
+
+        <div className="tabla-scroll">
+
+          <Table hover bordered className="tabla-vector">
+
+            <thead>
+              <tr>
+                {columnas_th.map((col, i) => (
+                  <th key={i}>{col}</th>
+                ))}
+              </tr>
+            </thead>
+
+            <tbody>
+              {filas.map((fila, index) => (
+                <React.Fragment key={index}>
+
+                  {fila.evento === "Abre_Tienda" && (
+                    <tr className="table-primary">
+                      <td colSpan={columnas_th.length} className="text-center fw-bold">
+                        Inicio Nuevo Día de la Simulación
+                      </td>
+                    </tr>
+                  )}
+
+                  <tr>
+                    <td>{fila.hora}</td>
+                    <td>{fila.evento}</td>
+                    <td>{mostrarValorVacioNAda(fila.rnd_llegada)}</td>
+                    <td>{fila.tiempo_entre_llegadas}</td>
+                    <td>{fila.proxima_llegada}</td>
+                    <td>{fila.estado_tecnico}</td>
+                    <td>{mostrarValorVacioNAda(fila.rnd_duracion_atencion)}</td>
+                    <td>{fila.duracion_atencion}</td>
+                    <td>{fila.proximo_fin_atencion}</td>
+                    <td>{mostrarValorVacioNAda(fila.rnd_presupuesto)}</td>
+                    <td>{fila.presupuesto}</td>
+                    <td>{mostrarValorVacioNAda(fila.rnd_deja_equipo)}</td>
+                    <td>{fila.deja_equipo == null ? "" : (fila.deja_equipo ? "Sí" : "No")}</td>
+                    <td>{mostrarValorVacioNAda(fila.rnd_duracion_reparacion)}</td>
+                    <td>{fila.duracion_reparacion}</td>
+                    <td>{fila.fila_atencion_cantidad}</td>
+                    <td>{fila.fila_equipos_cantidad}</td>
+                    <td>{fila.tiempo_de_atencion_total}</td>
+                    <td>{fila.tiempo_de_reparacion_total}</td>
+                    <td>{fila.clientes_no_atendidos}</td>
+                  </tr>
+
+                </React.Fragment>
+              ))}
+            </tbody>
+
+          </Table>
 
         </div>
 
       </div>
 
-      <div className="tabla-scroll">
-  
-      {/* TABLA */}
-      <Table hover bordered className="tabla-vector">
-
-        <thead>
-          <tr>
-            {columnas_th.map((col, i) => (
-              <th key={i}>{col}</th>
-            ))}
-          </tr>
-        </thead>
-
-        <tbody >
-          {filas.map((fila, index) => (
-
-            <React.Fragment key={index}>
-                  {/* SEPARADOR VISUAL */}
-            {fila.evento === "Abre_Tienda" && (
-              <tr className="table-primary">
-                <td
-                  colSpan={columnas_th.length}
-                  className="text-center fw-bold"
-                >
-                  Inicio Nuevo Dia de la Simulacion
-                </td>
-              </tr>
-            )}
-
-
-
-            <tr>
-
-              <td>{fila.hora}</td>
-              <td>{fila.evento}</td>
-              <td>{mostrarValorVacioNAda(fila.rnd_llegada)}</td>
-              <td>{fila.tiempo_entre_llegadas}</td>
-              <td>{fila.proxima_llegada}</td>
-              <td>{fila.estado_tecnico}</td>
-              <td>{mostrarValorVacioNAda(fila.rnd_duracion_atencion)}</td>
-              <td>{fila.duracion_atencion}</td>
-              <td>{fila.proximo_fin_atencion}</td>
-              <td>{mostrarValorVacioNAda(fila.rnd_presupuesto)}</td>
-              <td>{fila.presupuesto}</td>
-              <td>{mostrarValorVacioNAda(fila.rnd_deja_equipo)}</td>
-              <td>{fila.deja_equipo ? "Sí" : "No"}</td>
-              <td>{mostrarValorVacioNAda(fila.rnd_duracion_reparacion)}</td>
-              <td>{fila.duracion_reparacion}</td>
-              <td>{fila.fila_atencion_cantidad}</td>
-              <td>{fila.fila_equipos_cantidad}</td>
-              <td>{fila.tiempo_de_atencion_total}</td>
-              <td>{fila.tiempo_de_reparacion_total}</td>
-              <td>{fila.clientes_no_atendidos}</td>
-
-            </tr>
-            </React.Fragment>
-          ))}
-        </tbody>
-
-      </Table>
-      </div>
-
       {/* PAGINACIÓN */}
-      <div style={{
-        marginTop: "20px",
-        display: "flex",
-        justifyContent: "center",
-        gap: "10px"
-      }}>
+      <div className="tabla-pagination">
 
         <button
           className="btn btn-secondary"
@@ -293,8 +234,7 @@ export const VectorEstado = () => {
         </button>
 
         <select
-          className="form-select"
-          style={{ width: "120px" }}
+          className="form-select tabla-size"
           value={size}
           onChange={(e) => setSize(Number(e.target.value))}
         >
