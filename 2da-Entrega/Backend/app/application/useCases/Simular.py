@@ -267,7 +267,7 @@ class Simular:
         self.evento = LlegaCliente()
 
         for i in range(self.i_iteraciones):
-
+            # region guardado en bulk de filas
             # si mi cantidad de filas en mi vector de filas a guardar es mayor o igual al tamaño definido para commit
             # a la bdd, entonces guardo las filas y limpio el vector de filas a guardar.
             if len(self.filas_a_guardar) >= self.batch_size:
@@ -278,6 +278,8 @@ class Simular:
 
                 self.filas_a_guardar = []
 
+            #endregion guardado en bulk de filas
+            
             if self.local_abierto:
                 self.evento.ejecutar_accion(self)
                 # definir que datos corresponden guardar en esta fila y guardarlos en el vector de filas
