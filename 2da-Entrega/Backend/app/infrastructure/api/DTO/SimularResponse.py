@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Any
 
-from DTO.SimulacionItem import SimulacionItem
+from app.infrastructure.api.DTO.SimulacionItem import SimulacionItem
 
 
 class SimularResponse(BaseModel):

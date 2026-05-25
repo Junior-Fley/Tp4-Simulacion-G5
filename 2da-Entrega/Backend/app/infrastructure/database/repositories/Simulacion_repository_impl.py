@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from app.application.ports.Simulacion_repository import ISimulacionRepository
 from app.domain.models.ColaFIFO import ColaFIFO
 from app.infrastructure.database.models.Simulacion_ORM import SimulacionORM
+from typing import Iterable, Tuple
 
 class SimulacionRepositoryImpl(ISimulacionRepository):
     def __init__(self, session: Session):
@@ -44,3 +45,36 @@ class SimulacionRepositoryImpl(ISimulacionRepository):
         total = query.count()
         items = query.order_by(SimulacionORM.id).offset((page - 1) * size).limit(size).all()
         return items, total
+
+
+    def guardar_filas_bulk(self, filas: Iterable[Tuple[int, str, str, float, str, str, str, float, str, str,
+    float, str, float, bool | None, float, str, int, int, str, str, int, any, any]]
+    ) -> None:
+        objetos = [
+            SimulacionORM(
+                coleccion_id=f[0],
+                hora=f[1],
+                evento=f[2],
+                rnd_llegada=f[3],
+                tiempo_entre_llegadas=f[4],
+                proxima_llegada=f[5],
+                estado_tecnico=f[6],
+                rnd_duracion_atencion=f[7],
+                duracion_atencion=f[8],
+                proximo_fin_atencion=f[9],
+                rnd_presupuesto=f[10],
+                presupuesto=f[11],
+                rnd_deja_equipo=f[12],
+                deja_equipo=f[13],
+                rnd_duracion_reparacion=f[14],
+                duracion_reparacion=f[15],
+                fila_atencion_cantidad=f[16],
+                fila_equipos_cantidad=f[17],
+                tiempo_de_atencion_total=f[18],
+                tiempo_de_reparacion_total=f[19],
+                clientes_no_atendidos=f[20],
+            )
+            for f in filas
+        ]
+        self.session.bulk_save_objects(objetos)
+        self.session.flush()

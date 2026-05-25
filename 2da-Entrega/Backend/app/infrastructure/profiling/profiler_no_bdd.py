@@ -11,8 +11,8 @@ def main() -> None:
 
     simulador = Simular(
         uow_factory=uow_factory,
-        x_tiempo=0,
-        i_iteraciones=100_000,
+        x_tiempo=99999999999,
+        i_iteraciones=100_00,
         j_hora_inicio=600,
         repo_override=ConsoleTestRepo()
     )

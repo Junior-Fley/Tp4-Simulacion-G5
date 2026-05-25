@@ -17,13 +17,19 @@ class FinReparacion(Evento):
 
         # Actualizo la hora actual con el tiempo restante de reparacion del equipo
         # que está primero en la cola de equipos
-        simulacion.hora_actual += simulacion.cola_equipos.primero().tiempo_reparacion_restante
+        if simulacion.cola_equipos.primero().tiempo_reparacion_restante is not None:
 
-        # Aumentamos el acumulador del tecnico
-        simulacion.tecnico.acum_reparacion += simulacion.cola_equipos.primero().tiempo_reparacion_restante
+            """print(f"hora actual {simulacion.hora_actual}")
+            
+            print(f"tiempo_reparacion_restante {simulacion.cola_equipos.primero().tiempo_reparacion_restante}")"""
 
-        # Retiro el equipo que se acaba de reparar de la cola de equipos
-        simulacion.cola_equipos.retirar()
+            simulacion.hora_actual += simulacion.cola_equipos.primero().tiempo_reparacion_restante
+
+            # Aumentamos el acumulador del tecnico
+            simulacion.tecnico.acum_reparacion += simulacion.cola_equipos.primero().tiempo_reparacion_restante
+
+            # Retiro el equipo que se acaba de reparar de la cola de equipos
+            simulacion.cola_equipos.retirar()
 
         # Ahora queda calcular cuál es el próximo evento a ejecutar
 
