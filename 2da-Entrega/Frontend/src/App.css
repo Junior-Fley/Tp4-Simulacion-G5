@@ -1,36 +1,49 @@
-.tabla-container {
-  width: 95%;
-  margin: 20px auto;
+.tabla-scroll {
+  width: 100%;
   overflow-x: auto;
   overflow-y: auto;
   max-height: 700px;
+
   border: 1px solid #ccc;
   border-radius: 10px;
 }
 
+/* TABLA */
 .tabla-vector {
   text-align: center;
+  min-width: 2500px;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
-.tabla-vector thead tr {
-  background-color: #04AA6D;
-  color: white;
+/* CABECERA FIJA */
+.tabla-vector thead th {
   position: sticky;
   top: 0;
-  z-index: 1;
-}
 
-.tabla-vector th {
+  background-color: #04AA6D;
+  color: white;
+
+  z-index: 2;
+
   min-width: 150px;
   white-space: nowrap;
   padding: 8px 16px;
 }
 
+/* CELDAS */
+.tabla-vector td {
+  padding: 8px 16px;
+  white-space: nowrap;
+}
+
+/* FILAS */
 .tabla-vector tbody tr {
   transition: 0.2s;
   cursor: pointer;
 }
 
+/* HOVER */
 .tabla-vector tbody tr:hover {
   background-color: #d1f5e0;
 }

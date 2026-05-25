@@ -205,6 +205,8 @@ export const VectorEstado = () => {
 
       </div>
 
+      <div className="tabla-scroll">
+  
       {/* TABLA */}
       <Table hover bordered className="tabla-vector">
 
@@ -216,7 +218,7 @@ export const VectorEstado = () => {
           </tr>
         </thead>
 
-        <tbody>
+        <tbody >
           {filas.map((fila, index) => (
 
             <React.Fragment key={index}>
@@ -227,7 +229,7 @@ export const VectorEstado = () => {
                   colSpan={columnas_th.length}
                   className="text-center fw-bold"
                 >
-                  Inicio de nueva simulación
+                  Inicio Nuevo Dia de la Simulacion
                 </td>
               </tr>
             )}
@@ -263,6 +265,7 @@ export const VectorEstado = () => {
         </tbody>
 
       </Table>
+      </div>
 
       {/* PAGINACIÓN */}
       <div style={{

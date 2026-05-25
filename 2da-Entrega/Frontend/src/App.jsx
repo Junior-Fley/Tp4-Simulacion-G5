@@ -6,7 +6,6 @@ import PiePagina from "./components/PiePagina";
 
 import DefVariables from "./pages/DefVariables";
 import { VectorEstado } from "./pages/VectorEstado";
-import Resultados from "./pages/Resultados";
 
 function App() {
   return (
