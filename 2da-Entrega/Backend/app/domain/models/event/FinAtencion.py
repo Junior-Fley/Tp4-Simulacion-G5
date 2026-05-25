@@ -17,7 +17,7 @@ class FinAtencion(Evento):
         super().__init__("Fin_Atención")
 
     def ejecutar_accion(self, simulacion: Simular):
-
+        print(f'Iteracion de FinAtencion')
         # Aumentamos el acumulador del tecnico
         simulacion.tecnico.acum_atencion += simulacion.hora_proximo_fin_atencion - simulacion.hora_actual
 
@@ -25,35 +25,43 @@ class FinAtencion(Evento):
         simulacion.hora_actual = simulacion.hora_proximo_fin_atencion
 
         if simulacion.hora_actual > simulacion.hora_cierre:
-            simulacion.clientes_no_atendidos = simulacion.cola_clientes.cantidad()
+            simulacion.clientes_no_atendidos += simulacion.cola_clientes.cantidad()
+            for cliente in simulacion.cola_clientes.elementos:
+                cliente.estado = EstadoCliente.NO_ATENDIDO_POR_CIERRE.value
+
+            simulacion.cola_clientes.marcar_dirty()
+            simulacion.cola_clientes.serialize()
             simulacion.cola_clientes.vaciar()
+        else:
+            # 2 - Elimino al cliente de la fila
+            # si retiro un cliente de la cola el caché se ensucia
+            simulacion.cola_clientes.marcar_dirty()
+            simulacion.cola_clientes.retirar()
 
-        # 2 - Elimino al cliente de la fila
-        # si retiro un cliente de la cola el caché se ensucia
-        simulacion.cola_clientes.marcar_dirty()
-        simulacion.cola_clientes.retirar()
+            # 3 - Se calcula si el cliente acepta la reparación o no
+            simulacion.rnd_presupuesto = random.random()
 
-        # 3 - Se calcula si el cliente acepta la reparación o no
-        simulacion.rnd_presupuesto = random.random()
+            simulacion.presupuesto = "Normal"
 
-        simulacion.presupuesto = "Normal"
+            simulacion.acepto = True
+            if simulacion.rnd_presupuesto < 0.3:
+                simulacion.presupuesto = "Elevado"
+                simulacion.rnd_acepta = random.random()
+                if simulacion.rnd_acepta < 0.5:
+                    simulacion.acepto = False
 
-        simulacion.acepto = True
-        if simulacion.rnd_presupuesto < 0.3:
-            simulacion.presupuesto = "Elevado"
-            simulacion.rnd_acepta = random.random()
-            if simulacion.rnd_acepta < 0.5:
-                simulacion.acepto = False
+            # 4 - Si aceptó, deja el dispositivo, por lo que lo agrego a la fila
+            if simulacion.acepto:
+                simulacion.contador_equipos += 1
+                id_equipo = simulacion.contador_equipos
+                nuevo_equipo = Equipo(id_equipo, EstadoEquipo.EN_COLA_REPARACION,
+                                      simulacion.hora_actual, None,
+                                      None, None, 0)
 
-        # 4 - Si aceptó, deja el dispositivo, por lo que lo agrego a la fila
-        if simulacion.acepto:
-            simulacion.contador_equipos += 1
-            nuevo_equipo = Equipo(simulacion.contador_equipos, EstadoEquipo.EN_COLA_REPARACION, simulacion.hora_actual, None,
-                                  None, None, 0)
+                # si agrego equipos a la cola, entonces mi caché de la cola de clientes se vuelve sucio, por lo que tengo que marcarlo como tal
+                simulacion.cola_equipos.marcar_dirty()
+                simulacion.cola_equipos.agregar(nuevo_equipo)
 
-            # si agrego equipos a la cola, entonces mi caché de la cola de clientes se vuelve sucio, por lo que tengo que marcarlo como tal
-            simulacion.cola_equipos.marcar_dirty()
-            simulacion.cola_equipos.agregar(nuevo_equipo)
 
         # 5 - Defino cuál es el próximo evento a ejecutar
 
@@ -69,8 +77,17 @@ class FinAtencion(Evento):
             # Actualizo el estado del técnico
             simulacion.tecnico.estado = EstadoTecnico.ATENDIENDO_CLIENTE
             # Actualizo el estado del cliente
+
+            print(
+                f'Evento: FinAtencion - Antes de calcular'
+                f'El 1er cliente entró al bucle así: '
+                f' \n Cliente {simulacion.cola_clientes.primero().id_cliente}. Tiene estado: {simulacion.cola_clientes.primero().estado}'
+                f' \n El técnico tiene estado: {simulacion.tecnico.estado}. El evento actual es {simulacion.evento}'
+                f' \n EL VALOR DE PROXIMO_FIN_ATENCION ES: {simulacion.hora_proximo_fin_atencion}')
+
             primero = simulacion.cola_clientes.primero()
             primero.estado = EstadoCliente.SIENDO_ATENDIDO.value
+
             simulacion.cola_clientes.modificar_primero(primero)
 
             # Calculo el tiempo de atencion
@@ -78,6 +95,11 @@ class FinAtencion(Evento):
             simulacion.tiempo_hasta_fin_de_atencion = simulacion.uniforme(simulacion.rnd_atencion, simulacion.min_atencion, simulacion.max_atencion)
             simulacion.hora_proximo_fin_atencion = simulacion.hora_actual + simulacion.tiempo_hasta_fin_de_atencion
 
+            print(
+                f'Evento: FinAtencion - Despues de calcular'
+                f'El 1er cliente entró al bucle así: '
+                f' \n Cliente {simulacion.cola_clientes.primero().id_cliente}. Tiene estado: {simulacion.cola_clientes.primero().estado}'
+                f' \n EL VALOR DE PROXIMO_FIN_ATENCION ES: {simulacion.hora_proximo_fin_atencion}')
 
             if simulacion.hora_proximo_fin_atencion < simulacion.hora_proxima_llegada:
                 simulacion.proximo_evento = FinAtencion()

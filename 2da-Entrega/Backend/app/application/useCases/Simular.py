@@ -12,6 +12,8 @@ from app.domain.models.event.AbreTienda import AbreTienda
 from app.domain.models.event.FinReparacion import FinReparacion
 from app.domain.models.ColaClientes import ColaClientes
 from app.domain.models.ColaEquipos import ColaEquipos
+from domain.models.EstadoCliente import EstadoCliente
+from domain.models.event.FinAtencion import FinAtencion
 
 
 class Simular:
@@ -276,9 +278,13 @@ class Simular:
 
                 self.filas_a_guardar = []
 
-            if self.local_abierto:
-                self.evento.ejecutar_accion(self)
+            print(f'{self.filas_a_guardar[-1]}') if len(self.filas_a_guardar) > 0 else print('No hay filas para guardar aún.')
 
+            if self.local_abierto:
+                print()
+                print(f'Iteración: {i+1}.')
+                print()
+                self.evento.ejecutar_accion(self)
                 # definir que datos corresponden guardar en esta fila y guardarlos en el vector de filas
                 # para después guardar en BDD
                 match self.evento.nombre:
@@ -295,8 +301,11 @@ class Simular:
 
                 if self.hora_actual >= self.hora_cierre:
                     self.local_abierto = False
-                    self.evento = FinReparacion() if self.cola_equipos.cantidad() > 0 else AbreTienda()
-                    self.proximo_evento = self.evento
+                    if self.cola_clientes.cantidad() > 0 and self.cola_clientes.primero().estado == EstadoCliente.SIENDO_ATENDIDO.value:
+                        self.evento = FinAtencion()
+                    else:
+                        self.evento = FinReparacion() if self.cola_equipos.cantidad() > 0 else AbreTienda()
+                    self.proximo_evento = FinReparacion()
 
             else:
                 if self.cola_equipos.cantidad() > 0:

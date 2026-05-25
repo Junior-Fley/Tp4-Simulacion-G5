@@ -14,6 +14,11 @@ class AbreTienda(Evento):
         super().__init__("Abre_Tienda")
 
     def ejecutar_accion(self, simulacion: Simular):
+        simulacion.hora_proximo_fin_atencion = None
+        print(f'Iteracion de AbreTienda')
+        #TODO Al vaciar, cambio el estado de los clientes por "no_atendido_por_cierre"
+        # y los pateo a todos fuera de mi negocio
+
         simulacion.hora_actual = simulacion.hora_apertura
         simulacion.local_abierto = True
         simulacion.tecnico.estado = EstadoTecnico.LIBRE
