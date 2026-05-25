@@ -5,12 +5,10 @@ from sqlalchemy.engine import Engine
 
 
 _DEFAULT_KWARGS = dict(
-    pool_size=10,
-    max_overflow=20,
-    pool_pre_ping=True,
-    pool_recycle=1800,      # 30 min
     echo=False,
-    isolation_level="SERIALIZABLE",
+    connect_args= {
+    "timeout": 30,
+},
 )
 
 def create_db_engine(db_url: Optional[str] = None, **overrides) -> Engine:
@@ -24,3 +22,5 @@ def create_db_engine(db_url: Optional[str] = None, **overrides) -> Engine:
 
     kwargs = {**_DEFAULT_KWARGS, **overrides}
     return create_engine(db_url, **kwargs)
+
+
