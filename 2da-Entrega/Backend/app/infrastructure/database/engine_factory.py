@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 from typing import Optional
+import orjson
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
+
+
+def json_serializer(obj):
+    return orjson.dumps(obj).decode("utf-8")
 
 
 _DEFAULT_KWARGS = dict(
@@ -10,6 +15,7 @@ _DEFAULT_KWARGS = dict(
     connect_args={
         "timeout": 30,
     },
+    json_serializer=json_serializer,
 )
 
 
