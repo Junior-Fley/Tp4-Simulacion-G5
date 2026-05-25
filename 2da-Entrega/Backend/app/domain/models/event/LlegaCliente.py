@@ -29,7 +29,8 @@ class LlegaCliente(Evento):
         simulacion.hora_actual = simulacion.hora_proxima_llegada
 
         simulacion.contador_clientes += 1
-        cliente = Cliente(simulacion.contador_clientes, EstadoCliente.EN_COLA)
+        id_cliente = simulacion.contador_clientes
+        cliente = Cliente(id_cliente, EstadoCliente.EN_COLA)
 
         # si agrego clientes a la cola, entonces mi caché de la cola de clientes se vuelve sucio, por lo que tengo que marcarlo como tal
         simulacion.cola_clientes.marcar_dirty()
@@ -44,8 +45,10 @@ class LlegaCliente(Evento):
 
         simulacion.tecnico.estado = EstadoTecnico.ATENDIENDO_CLIENTE
 
-        if simulacion.cola_clientes.primero().estado == EstadoCliente.EN_COLA:
-            simulacion.cola_clientes.primero().estado = EstadoCliente.SIENDO_ATENDIDO
+        if simulacion.cola_clientes.primero().estado == EstadoCliente.EN_COLA.value:
+            primero = simulacion.cola_clientes.primero()
+            primero.estado = EstadoCliente.SIENDO_ATENDIDO.value
+            simulacion.cola_clientes.modificar_primero(primero)
             simulacion.rnd_atencion = random.random()
             simulacion.tiempo_hasta_fin_de_atencion = simulacion.uniforme(
                 simulacion.rnd_atencion,

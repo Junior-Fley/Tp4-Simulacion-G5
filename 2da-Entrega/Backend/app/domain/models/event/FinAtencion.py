@@ -7,6 +7,7 @@ from app.domain.models.EstadoEquipo import EstadoEquipo
 from typing import TYPE_CHECKING
 
 from app.domain.models.EstadoTecnico import EstadoTecnico
+from app.domain.models.EstadoCliente import EstadoCliente
 
 if TYPE_CHECKING:
     from app.application.useCases.Simular import Simular
@@ -67,6 +68,10 @@ class FinAtencion(Evento):
 
             # Actualizo el estado del técnico
             simulacion.tecnico.estado = EstadoTecnico.ATENDIENDO_CLIENTE
+            # Actualizo el estado del cliente
+            primero = simulacion.cola_clientes.primero()
+            primero.estado = EstadoCliente.SIENDO_ATENDIDO.value
+            simulacion.cola_clientes.modificar_primero(primero)
 
             # Calculo el tiempo de atencion
             simulacion.rnd_atencion = random.random()
