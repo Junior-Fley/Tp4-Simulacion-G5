@@ -5,6 +5,8 @@ from app.domain.models.EstadoTecnico import EstadoTecnico
 
 from typing import TYPE_CHECKING
 
+from app.domain.models.EstadoCliente import EstadoCliente
+
 if TYPE_CHECKING:
     from app.application.useCases.Simular import Simular
 
@@ -15,9 +17,12 @@ class AbreTienda(Evento):
 
     def ejecutar_accion(self, simulacion: Simular):
         simulacion.hora_proximo_fin_atencion = None
-        print(f'Iteracion de AbreTienda')
-        #TODO Al vaciar, cambio el estado de los clientes por "no_atendido_por_cierre"
-        # y los pateo a todos fuera de mi negocio
+        simulacion.clientes_no_atendidos += simulacion.cola_clientes.cantidad()
+        for cliente in simulacion.cola_clientes.elementos:
+            cliente.estado = EstadoCliente.NO_ATENDIDO_POR_CIERRE.value
+        simulacion.cola_clientes.marcar_dirty()
+        simulacion.cola_clientes.serialize()
+        simulacion.cola_clientes.vaciar()
 
         simulacion.hora_actual = simulacion.hora_apertura
         simulacion.local_abierto = True

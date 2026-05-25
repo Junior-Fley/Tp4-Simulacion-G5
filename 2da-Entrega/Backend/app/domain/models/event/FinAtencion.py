@@ -17,26 +17,26 @@ class FinAtencion(Evento):
         super().__init__("Fin_Atención")
 
     def ejecutar_accion(self, simulacion: Simular):
-        print(f'Iteracion de FinAtencion')
         # Aumentamos el acumulador del tecnico
         simulacion.tecnico.acum_atencion += simulacion.hora_proximo_fin_atencion - simulacion.hora_actual
 
         # 1 - Actualizo la hora
         simulacion.hora_actual = simulacion.hora_proximo_fin_atencion
 
-        if simulacion.hora_actual > simulacion.hora_cierre:
+        # 2 - Elimino al cliente de la fila
+        # si retiro un cliente de la cola el caché se ensucia
+        simulacion.cola_clientes.marcar_dirty()
+        simulacion.cola_clientes.retirar()
+
+        if simulacion.hora_actual > simulacion.hora_cierre and simulacion.cola_clientes.cantidad() > 0:
             simulacion.clientes_no_atendidos += simulacion.cola_clientes.cantidad()
             for cliente in simulacion.cola_clientes.elementos:
                 cliente.estado = EstadoCliente.NO_ATENDIDO_POR_CIERRE.value
-
             simulacion.cola_clientes.marcar_dirty()
             simulacion.cola_clientes.serialize()
             simulacion.cola_clientes.vaciar()
-        else:
-            # 2 - Elimino al cliente de la fila
-            # si retiro un cliente de la cola el caché se ensucia
-            simulacion.cola_clientes.marcar_dirty()
-            simulacion.cola_clientes.retirar()
+
+        elif simulacion.hora_actual < simulacion.hora_cierre:
 
             # 3 - Se calcula si el cliente acepta la reparación o no
             simulacion.rnd_presupuesto = random.random()
@@ -77,13 +77,6 @@ class FinAtencion(Evento):
             # Actualizo el estado del técnico
             simulacion.tecnico.estado = EstadoTecnico.ATENDIENDO_CLIENTE
             # Actualizo el estado del cliente
-
-            print(
-                f'Evento: FinAtencion - Antes de calcular'
-                f'El 1er cliente entró al bucle así: '
-                f' \n Cliente {simulacion.cola_clientes.primero().id_cliente}. Tiene estado: {simulacion.cola_clientes.primero().estado}'
-                f' \n El técnico tiene estado: {simulacion.tecnico.estado}. El evento actual es {simulacion.evento}'
-                f' \n EL VALOR DE PROXIMO_FIN_ATENCION ES: {simulacion.hora_proximo_fin_atencion}')
 
             primero = simulacion.cola_clientes.primero()
             primero.estado = EstadoCliente.SIENDO_ATENDIDO.value

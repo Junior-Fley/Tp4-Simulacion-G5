@@ -17,8 +17,18 @@ class LlegaCliente(Evento):
 
     def ejecutar_accion(self, simulacion: Simular):
 
-        if not simulacion.local_abierto:
-            simulacion.proximo_evento = None
+        if simulacion.hora_proxima_llegada > simulacion.hora_cierre:
+            simulacion.local_abierto = False
+            if simulacion.cola_clientes.cantidad() > 0 and simulacion.cola_clientes.primero().estado == EstadoCliente.SIENDO_ATENDIDO.value:
+                from app.domain.models.event.FinAtencion import FinAtencion
+                simulacion.proximo_evento = FinAtencion()
+            elif simulacion.cola_equipos.cantidad() > 0:
+                from app.domain.models.event.FinReparacion import FinReparacion
+                simulacion.proximo_evento = FinReparacion()
+            else:
+                from app.domain.models.event.AbreTienda import AbreTienda
+                simulacion.proximo_evento = AbreTienda()
+            
             return
 
         if simulacion.tecnico.estado == EstadoTecnico.ATENDIENDO_CLIENTE:
@@ -46,10 +56,7 @@ class LlegaCliente(Evento):
         simulacion.tecnico.estado = EstadoTecnico.ATENDIENDO_CLIENTE
 
         if simulacion.cola_clientes.primero().estado == EstadoCliente.EN_COLA.value:
-            print(
-                f'Evento: LlegaCliente - Antes de calcular'
-                f' \n Cliente {simulacion.cola_clientes.primero().id_cliente}. Tiene estado: {simulacion.cola_clientes.primero().estado}'
-                f' \n EL VALOR DE PROXIMO_FIN_ATENCION ES: {simulacion.hora_proximo_fin_atencion}')
+
             primero = simulacion.cola_clientes.primero()
             primero.estado = EstadoCliente.SIENDO_ATENDIDO.value
             simulacion.cola_clientes.modificar_primero(primero)
@@ -61,16 +68,6 @@ class LlegaCliente(Evento):
             )
             simulacion.hora_proximo_fin_atencion = simulacion.hora_actual + simulacion.tiempo_hasta_fin_de_atencion
 
-            print(
-                f'Evento: LlegaCliente - Despues de calcular'
-                f' \n Cliente {simulacion.cola_clientes.primero().id_cliente}. Tiene estado: {simulacion.cola_clientes.primero().estado}'
-                f' \n EL VALOR DE PROXIMO_FIN_ATENCION ES: {simulacion.hora_proximo_fin_atencion}')
-
-        if simulacion.hora_proximo_fin_atencion is None:
-            print(f'LlegaCliente con hora fin atencion NONE (REGIL)'
-                  f'Cliente: {simulacion.cola_clientes.primero().id_cliente}. Tiene estado: {simulacion.cola_clientes.primero().estado}'
-                f' \n El técnico tiene estado: {simulacion.tecnico.estado}. El evento actual es {simulacion.evento}'
-                f' \n EL VALOR DE PROXIMO_FIN_ATENCION ES: {simulacion.hora_proximo_fin_atencion}')
 
         if simulacion.hora_proxima_llegada > simulacion.hora_proximo_fin_atencion:
             from app.domain.models.event.FinAtencion import FinAtencion
