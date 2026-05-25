@@ -1,7 +1,5 @@
 import random
 
-from numba.core.typing.builtins import Print
-
 from app.domain.models.Equipo import Equipo
 from app.domain.models.EstadoTecnico import EstadoTecnico
 from app.domain.models.event.Evento import Evento
@@ -18,14 +16,10 @@ class FinReparacion(Evento):
     def ejecutar_accion(self, simulacion: Simular):
 
         #TODO Revisar y que ande
-        Print(F'Iteracion de FinReparacion')
+
         # Actualizo la hora actual con el tiempo restante de reparacion del equipo
         # que está primero en la cola de equipos
         if simulacion.cola_equipos.primero().tiempo_reparacion_restante is not None:
-
-            """print(f"hora actual {simulacion.hora_actual}")
-            
-            print(f"tiempo_reparacion_restante {simulacion.cola_equipos.primero().tiempo_reparacion_restante}")"""
 
             simulacion.hora_actual += simulacion.cola_equipos.primero().tiempo_reparacion_restante
 

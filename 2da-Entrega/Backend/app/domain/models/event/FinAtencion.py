@@ -88,12 +88,6 @@ class FinAtencion(Evento):
             simulacion.tiempo_hasta_fin_de_atencion = simulacion.uniforme(simulacion.rnd_atencion, simulacion.min_atencion, simulacion.max_atencion)
             simulacion.hora_proximo_fin_atencion = simulacion.hora_actual + simulacion.tiempo_hasta_fin_de_atencion
 
-            print(
-                f'Evento: FinAtencion - Despues de calcular'
-                f'El 1er cliente entró al bucle así: '
-                f' \n Cliente {simulacion.cola_clientes.primero().id_cliente}. Tiene estado: {simulacion.cola_clientes.primero().estado}'
-                f' \n EL VALOR DE PROXIMO_FIN_ATENCION ES: {simulacion.hora_proximo_fin_atencion}')
-
             if simulacion.hora_proximo_fin_atencion < simulacion.hora_proxima_llegada:
                 simulacion.proximo_evento = FinAtencion()
             else:

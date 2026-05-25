@@ -278,12 +278,7 @@ class Simular:
 
                 self.filas_a_guardar = []
 
-            print(f'{self.filas_a_guardar[-1]}') if len(self.filas_a_guardar) > 0 else print('No hay filas para guardar aún.')
-
             if self.local_abierto:
-                print()
-                print(f'Iteración: {i+1}.')
-                print()
                 self.evento.ejecutar_accion(self)
                 # definir que datos corresponden guardar en esta fila y guardarlos en el vector de filas
                 # para después guardar en BDD
