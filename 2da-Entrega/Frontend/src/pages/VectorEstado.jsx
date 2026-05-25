@@ -14,32 +14,20 @@ export const VectorEstado = () => {
 
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(50);
-
-  const columnas_th = [
-    "Hora",
-    "Evento",
-    "RND Llegada",
-    "Tiempo entre Llegadas",
-    "Próxima Llegada",
-    "Estado Técnico",
-    "RND Duración Atención",
-    "Duración Atención",
-    "Próximo Fin Atención",
-    "RND Presupuesto",
-    "Presupuesto",
-    "RND ¿Deja Reparar?",
-    "¿Deja Reparar?",
-    "RND Duración Reparación",
-    "Duración Reparación",
-    "Cola Atención",
-    "Cola Equipos",
-    "Tiempo Atención",
-    "Tiempo Reparación",
-    "Clientes No Atendidos"
-  ];
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const mostrarValorVacioNAda = (valor) =>
     valor === -1 ? "" : valor;
+
+  // Calcular máximos de clientes y equipos en la página actual
+  const maxClientes = filas.length > 0
+    ? Math.max(0, ...filas.map(f => f.clientes?.length ?? 0))
+    : 0;
+
+  const maxEquipos = filas.length > 0
+    ? Math.max(0, ...filas.map(f => f.equipos?.length ?? 0))
+    : 0;
 
   useEffect(() => {
     const sims = JSON.parse(
@@ -60,6 +48,8 @@ export const VectorEstado = () => {
         );
 
         setFilas(data.items);
+        setTotal(data.total ?? 0);
+        setTotalPages(data.total_pages ?? 0);
 
       } catch (error) {
         console.error("Error al obtener filas:", error);
@@ -86,10 +76,8 @@ export const VectorEstado = () => {
         >
           <option value="">Seleccionar simulación</option>
 
-          {simulaciones.map((sim) => (
-            <option key={sim.id} value={sim.id}>
-              Simulación #{sim.id}
-            </option>
+          {simulaciones.map((sim, index) => (
+            <option key={`${sim.id}-${index}`} value={sim.id}></option>
           ))}
         </select>
       </div>
@@ -137,18 +125,7 @@ export const VectorEstado = () => {
             </div>
           </div>
 
-          <div className="col-md-3">
-            <div className="card shadow-sm border-dark text-center">
-              <div className="card-body">
-                <h6>Estado Técnico</h6>
-                <h3>
-                  {filas.length > 0
-                    ? filas[filas.length - 1].estado_tecnico
-                    : "-"}
-                </h3>
-              </div>
-            </div>
-          </div>
+          
 
         </div>
       </div>
@@ -162,8 +139,43 @@ export const VectorEstado = () => {
 
             <thead>
               <tr>
-                {columnas_th.map((col, i) => (
-                  <th key={i}>{col}</th>
+                {/* COLUMNAS FIJAS */}
+                <th>Hora</th>
+                <th>Evento</th>
+                <th>RND Llegada</th>
+                <th>T. Entre Llegadas</th>
+                <th>Próxima Llegada</th>
+                <th>Estado Técnico</th>
+                <th>RND Dur. Atención</th>
+                <th>Dur. Atención</th>
+                <th>Próx. Fin Atención</th>
+                <th>RND Presupuesto</th>
+                <th>Presupuesto</th>
+                <th>RND ¿Deja?</th>
+                <th>¿Deja?</th>
+                <th>RND Dur. Reparación</th>
+                <th>Dur. Reparación</th>
+                <th>Cola Atención</th>
+                <th>Cola Equipos</th>
+                <th>T. Atención</th>
+                <th>T. Reparación</th>
+                <th>No Atendidos</th>
+
+                {/* COLUMNAS DINÁMICAS — CLIENTES */}
+                {Array.from({ length: maxClientes }, (_, i) => (
+                  <th key={`ch-cli-${i}`} style={{ minWidth: 130 }}>
+                    Cliente {i + 1} — Estado
+                  </th>
+                ))}
+
+                {/* COLUMNAS DINÁMICAS — EQUIPOS (4 sub-columnas por equipo) */}
+                {Array.from({ length: maxEquipos }, (_, i) => (
+                  <React.Fragment key={`ch-eq-${i}`}>
+                    <th style={{ minWidth: 130 }}>Equipo {i + 1} — Estado</th>
+                    <th style={{ minWidth: 110 }}>Equipo {i + 1} — Dejado</th>
+                    <th style={{ minWidth: 110 }}>Equipo {i + 1} — Fin</th>
+                    <th style={{ minWidth: 110 }}>Equipo {i + 1} — Tiempo</th>
+                  </React.Fragment>
                 ))}
               </tr>
             </thead>
@@ -174,13 +186,21 @@ export const VectorEstado = () => {
 
                   {fila.evento === "Abre_Tienda" && (
                     <tr className="table-primary">
-                      <td colSpan={columnas_th.length} className="text-center fw-bold">
+                      <td
+                        colSpan={
+                          20
+                          + maxClientes
+                          + maxEquipos * 4
+                        }
+                        className="text-center fw-bold"
+                      >
                         Inicio Nuevo Día de la Simulación
                       </td>
                     </tr>
                   )}
 
                   <tr>
+                    {/* CELDAS FIJAS */}
                     <td>{fila.hora}</td>
                     <td>{fila.evento}</td>
                     <td>{mostrarValorVacioNAda(fila.rnd_llegada)}</td>
@@ -193,7 +213,13 @@ export const VectorEstado = () => {
                     <td>{mostrarValorVacioNAda(fila.rnd_presupuesto)}</td>
                     <td>{fila.presupuesto}</td>
                     <td>{mostrarValorVacioNAda(fila.rnd_deja_equipo)}</td>
-                    <td>{fila.deja_equipo == null ? "" : (fila.deja_equipo ? "Sí" : "No")}</td>
+                    <td>
+                      {fila.deja_equipo == null
+                        ? ""
+                        : fila.deja_equipo
+                        ? "Sí"
+                        : "No"}
+                    </td>
                     <td>{mostrarValorVacioNAda(fila.rnd_duracion_reparacion)}</td>
                     <td>{fila.duracion_reparacion}</td>
                     <td>{fila.fila_atencion_cantidad}</td>
@@ -201,6 +227,23 @@ export const VectorEstado = () => {
                     <td>{fila.tiempo_de_atencion_total}</td>
                     <td>{fila.tiempo_de_reparacion_total}</td>
                     <td>{fila.clientes_no_atendidos}</td>
+
+                    {/* CELDAS DINÁMICAS — CLIENTES */}
+                    {Array.from({ length: maxClientes }, (_, i) => (
+                      <td key={`fila-${index}-cli-${i}`}>
+                        {fila.clientes?.[i]?.estado ?? ""}
+                      </td>
+                    ))}
+
+                    {/* CELDAS DINÁMICAS — EQUIPOS */}
+                    {Array.from({ length: maxEquipos }, (_, i) => (
+                      <React.Fragment key={`fila-${index}-eq-${i}`}>
+                        <td>{fila.equipos?.[i]?.estado ?? ""}</td>
+                        <td>{fila.equipos?.[i]?.hora_dejado ?? ""}</td>
+                        <td>{fila.equipos?.[i]?.hora_fin ?? ""}</td>
+                        <td>{fila.equipos?.[i]?.tiempo ?? ""}</td>
+                      </React.Fragment>
+                    ))}
                   </tr>
 
                 </React.Fragment>
@@ -224,11 +267,14 @@ export const VectorEstado = () => {
           Anterior
         </button>
 
-        <span>Página {page}</span>
+        <span>
+          Página {page} {totalPages > 0 ? `de ${totalPages}` : ""}
+        </span>
 
         <button
           className="btn btn-secondary"
           onClick={() => setPage(page + 1)}
+          disabled={totalPages > 0 && page >= totalPages}
         >
           Siguiente
         </button>
@@ -236,7 +282,10 @@ export const VectorEstado = () => {
         <select
           className="form-select tabla-size"
           value={size}
-          onChange={(e) => setSize(Number(e.target.value))}
+          onChange={(e) => {
+            setSize(Number(e.target.value));
+            setPage(1);
+          }}
         >
           <option value={10}>10</option>
           <option value={50}>50</option>
