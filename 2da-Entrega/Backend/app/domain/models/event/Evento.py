@@ -52,8 +52,8 @@ class Evento(ABC):
             else:
                 # Si no hay equipos, el técnico se va a casa y espera la reapertura
                 simulacion.tecnico.estado = EstadoTecnico.LIBRE
-                from app.domain.models.event.AbreTienda import AbreTienda
-                simulacion.proximo_evento = AbreTienda()
+                #from app.domain.models.event.AbreTienda import AbreTienda
+                #simulacion.proximo_evento = AbreTienda()
 
             return True
 

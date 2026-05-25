@@ -16,6 +16,8 @@ class LlegaCliente(Evento):
         super().__init__("Llega_Cliente")
 
     def ejecutar_accion(self, simulacion: Simular):
+        print("iteracion de llega cliente")
+
 
         if not simulacion.local_abierto:
             simulacion.proximo_evento = None
