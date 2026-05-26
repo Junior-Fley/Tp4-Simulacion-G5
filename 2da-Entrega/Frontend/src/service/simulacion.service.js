@@ -7,6 +7,17 @@ const iniciarSimulacion = async (simulacion) => {
   return response.data;
 };
 
+// get.
+const listarSimulaciones = async () => {
+  const response = await axios.get("/simulaciones");
+  return response.data;
+};
+
+const obtenerStats = async (sim_id) => {
+  const response = await axios.get(`/simulaciones/${sim_id}/stats`);
+  return response.data;
+};
+
 const obtenerListasFilas = async (sim_id, page, size) => {
   const response = await axios.get(`/simulaciones/${sim_id }/filas?page=${page}&size=${size}`);
   return response.data;
@@ -17,6 +28,8 @@ const obtenerListasFilas = async (sim_id, page, size) => {
 
 export default {
   obtenerListasFilas, 
-  iniciarSimulacion
+  iniciarSimulacion,
+  listarSimulaciones,
+  obtenerStats,
 
 };

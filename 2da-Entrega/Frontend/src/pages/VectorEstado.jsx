@@ -14,13 +14,34 @@ export const VectorEstado = () => {
 
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(50);
-  const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [ultimaFila, setUltimaFila] = useState(null);
+  const [stats, setStats] = useState(null);
   const [detalleFila, setDetalleFila] = useState(null);
   const [detalleAbierto, setDetalleAbierto] = useState(false);
 
-  const mostrarValorVacioNAda = (valor) =>
-    valor === -1 ? "" : valor;
+  const mostrarValorVacioNAda = (valor) => {
+    if (valor === -1 || valor === null || valor === undefined || valor === "") {
+      return "";
+    }
+
+    // Evitar mostrar "NaN" si llega algo no numérico en un campo esperado como número.
+    const num = typeof valor === "number" ? valor : Number(valor);
+    if (typeof valor === "number" || (typeof valor === "string" && valor.trim() !== "")) {
+      if (Number.isNaN(num)) return "";
+    }
+
+    return valor;
+  };
+
+  const formatoTiempoEquipo = (valor) => {
+    if (valor === null || valor === undefined || valor === "") return "";
+    if (typeof valor === "string" && valor.includes(":")) return valor;
+
+    const num = Number(valor);
+    if (!Number.isFinite(num)) return "";
+    return `${num.toFixed(2)} min`;
+  };
 
   const formatoHoraAmPm = (valor) => {
     if (valor == null || valor === "") return "";
@@ -42,6 +63,16 @@ export const VectorEstado = () => {
     return `${h}:${m}:${s} ${ampm}`;
   };
 
+  const formatoPorcentaje = (valor) => {
+    if (valor === null || valor === undefined || valor === "") return "";
+    const num = Number(valor);
+    if (!Number.isFinite(num)) return "";
+    return num.toFixed(2);
+  };
+
+  const normalizarEvento = (evento) =>
+    typeof evento === "string" ? evento.trim().replace(/\s+/g, "_") : evento;
+
   const abrirDetalle = (fila) => {
     setDetalleFila(fila);
     setDetalleAbierto(true);
@@ -53,10 +84,41 @@ export const VectorEstado = () => {
   };
 
   useEffect(() => {
-    const sims = JSON.parse(
-      localStorage.getItem("simulaciones") || "[]"
-    );
-    setSimulaciones(sims);
+    const cargarSimulaciones = async () => {
+      try {
+        const data = await simulacionService.listarSimulaciones();
+
+        // El backend puede devolver [1,2] o [{id:1}, ...]
+        const normalizadas = Array.isArray(data)
+          ? data
+              .map((s) => {
+                if (s == null) return null;
+                if (typeof s === "number" || typeof s === "string") return { id: String(s) };
+                if (typeof s === "object" && s.id != null) return { id: String(s.id) };
+                return null;
+              })
+              .filter(Boolean)
+          : [];
+
+        setSimulaciones(normalizadas);
+      } catch (error) {
+        console.error("Error al listar simulaciones:", error);
+
+        // Fallback: mantener compatibilidad con el flujo anterior
+        const simsLocal = JSON.parse(
+          localStorage.getItem("simulaciones") || "[]"
+        );
+        setSimulaciones(
+          Array.isArray(simsLocal)
+            ? simsLocal
+                .map((s) => (s?.id != null ? { id: String(s.id) } : null))
+                .filter(Boolean)
+            : []
+        );
+      }
+    };
+
+    cargarSimulaciones();
   }, []);
 
   useEffect(() => {
@@ -71,8 +133,29 @@ export const VectorEstado = () => {
         );
 
         setFilas(data.items);
-        setTotal(data.total ?? 0);
         setTotalPages(data.total_pages ?? 0);
+
+        // KPIs: tomar la última fila real de la simulación (última página)
+        const tp = Number(data.total_pages ?? 0);
+        if (!tp || !Array.isArray(data.items) || data.items.length === 0) {
+          setUltimaFila(null);
+          return;
+        }
+
+        if (page === tp) {
+          setUltimaFila(data.items[data.items.length - 1] ?? null);
+          return;
+        }
+
+        const dataUltima = await simulacionService.obtenerListasFilas(
+          simId,
+          tp,
+          size
+        );
+        const itemsUltima = Array.isArray(dataUltima?.items)
+          ? dataUltima.items
+          : [];
+        setUltimaFila(itemsUltima[itemsUltima.length - 1] ?? null);
 
       } catch (error) {
         console.error("Error al obtener filas:", error);
@@ -81,6 +164,25 @@ export const VectorEstado = () => {
 
     cargarFilas();
   }, [simId, page, size]);
+
+  useEffect(() => {
+    const cargarStats = async () => {
+      try {
+        if (!simId) {
+          setStats(null);
+          return;
+        }
+
+        const data = await simulacionService.obtenerStats(simId);
+        setStats(data ?? null);
+      } catch (error) {
+        console.error("Error al obtener estadísticas:", error);
+        setStats(null);
+      }
+    };
+
+    cargarStats();
+  }, [simId]);
 
   return (
     <div className="tabla-page">
@@ -121,9 +223,9 @@ export const VectorEstado = () => {
               </div>
               <h6>Clientes No Atendidos por Cierre</h6>
               <h3>
-                {filas.length > 0
-                  ? filas[filas.length - 1].clientes_no_atendidos
-                  : 0}
+                {stats?.clientes_no_atendidos ??
+                  (ultimaFila ? ultimaFila.clientes_no_atendidos : 0)}
+                <span className="ms-2 fs-6 fw-normal text-muted">clientes</span>
               </h3>
             </div>
           </div>
@@ -133,11 +235,10 @@ export const VectorEstado = () => {
               <div className="kpi-icon">
                 <i className="bi bi-hourglass-split"></i>
               </div>
-              <h6>Permanencia Promedio en Taller (Hf - Hi)</h6>
+              <h6>Permanencia Promedio en Taller</h6>
               <h3>
-                {filas.length > 0
-                  ? filas[filas.length - 1].tiempo_de_atencion_total
-                  : "00:00:00"}
+                {stats?.promedio_permanencia_equipo ?? "—"}
+                <span className="ms-2 fs-6 fw-normal text-muted">hh:mm:ss</span>
               </h3>
             </div>
           </div>
@@ -147,11 +248,14 @@ export const VectorEstado = () => {
               <div className="kpi-icon">
                 <i className="bi bi-tools"></i>
               </div>
-              <h6>Porcentaje Técnico: Recep vs Reparación</h6>
+              <h6>Porcentaje Tiempo: Recepción / Reparación</h6>
               <h3>
-                {filas.length > 0
-                  ? filas[filas.length - 1].tiempo_de_reparacion_total
-                  : "00:00:00"}
+                {(() => {
+                  const rec = formatoPorcentaje(stats?.porcentaje_tiempo_recepcion);
+                  const rep = formatoPorcentaje(stats?.porcentaje_tiempo_reparacion);
+                  if (!rec && !rep) return "—";
+                  return `${rec || "0.00"}% / ${rep || "0.00"}%`;
+                })()}
               </h3>
             </div>
           </div>
@@ -171,23 +275,23 @@ export const VectorEstado = () => {
                 <th>Hora</th>
                 <th>Evento</th>
                 <th>RND Llegada</th>
-                <th>T. Entre Llegadas</th>
-                <th>Próxima Llegada</th>
+                <th>T. Entre Llegadas (hh:mm:ss)</th>
+                <th>Próxima Llegada (hh:mm:ss)</th>
                 <th>Estado Técnico</th>
                 <th>RND Dur. Atención</th>
-                <th>Dur. Atención</th>
-                <th>Próx. Fin Atención</th>
+                <th>Dur. Atención (hh:mm:ss)</th>
+                <th>Próx. Fin Atención (hh:mm:ss)</th>
                 <th>RND Presupuesto</th>
                 <th>Presupuesto</th>
                 <th>RND ¿Deja?</th>
                 <th>¿Deja?</th>
                 <th>RND Dur. Reparación</th>
-                <th>Dur. Reparación</th>
-                <th>Cola Atención</th>
-                <th>Cola Equipos</th>
-                <th>T. Atención</th>
-                <th>T. Reparación</th>
-                <th>No Atendidos</th>
+                <th>Dur. Reparación (hh:mm:ss)</th>
+                <th>Cola Atención (cant.)</th>
+                <th>Cola Equipos (cant.)</th>
+                <th>T. Atención (hh:mm:ss)</th>
+                <th>T. Reparación (hh:mm:ss)</th>
+                <th>No Atendidos (cant.)</th>
                 <th>Detalle</th>
               </tr>
             </thead>
@@ -196,7 +300,7 @@ export const VectorEstado = () => {
               {filas.map((fila, index) => (
                 <React.Fragment key={index}>
 
-                  {fila.evento === "Abre_Tienda" && (
+                  {normalizarEvento(fila.evento) === "Abre_Tienda" && (
                     <tr className="table-primary">
                       <td
                         colSpan={
@@ -332,9 +436,10 @@ export const VectorEstado = () => {
                     {equipo.hora_fin
                       ? ` - Fin: ${formatoHoraAmPm(equipo.hora_fin)}`
                       : ""}
-                    {equipo.tiempo != null && equipo.tiempo !== ""
-                      ? ` - Tiempo: ${Number(equipo.tiempo).toFixed(2)} min`
-                      : ""}
+                    {(() => {
+                      const t = formatoTiempoEquipo(equipo.tiempo);
+                      return t ? ` - Tiempo: ${t}` : "";
+                    })()}
                   </li>
                 ))}
               </ul>

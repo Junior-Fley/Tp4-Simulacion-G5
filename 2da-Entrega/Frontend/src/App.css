@@ -218,8 +218,8 @@
 .tabla-vector th:nth-child(2),
 .tabla-vector td:nth-child(2) {
   position: sticky;
-  left: 110px; /* Ancho ajustado para que quepa bien */
-  z-index: 6;
+  left: 150px; /* Ancho ajustado para que quepa bien */
+  z-index: 5;
   border-right: 1px solid var(--slate-200);
 }
 

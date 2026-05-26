@@ -59,19 +59,6 @@ const FormularioVar = () => {
     response.id_simulacion
   );
 
-  // guardar lista de simulaciones
-  const sims =
-    JSON.parse(localStorage.getItem("simulaciones")) || [];
-
-  sims.push({
-    id: response.id_simulacion,
-  });
-
-  localStorage.setItem(
-    "simulaciones",
-    JSON.stringify(sims)
-  );
-
   setMensaje("Simulación generada correctamente");
 
   setTipoMensaje("success");
