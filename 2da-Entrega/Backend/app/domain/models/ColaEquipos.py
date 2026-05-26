@@ -1,4 +1,4 @@
-from domain.models.ColaFIFO import ColaFIFO
+from app.domain.models.ColaFIFO import ColaFIFO
 
 class ColaEquipos(ColaFIFO):
     def __init__(self):

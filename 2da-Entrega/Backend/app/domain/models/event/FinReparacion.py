@@ -1,3 +1,4 @@
+from __future__ import annotations
 import random
 
 from app.domain.models.Equipo import Equipo
@@ -49,7 +50,7 @@ class FinReparacion(Evento):
             # y el próximo evento debe ser la apertura de la tienda el día siguiente a las 10 AM
             else:
                 #Marco el proximo evento como la apertura de la tienda
-                from domain.models.event.AbreTienda import AbreTienda
+                from app.domain.models.event.AbreTienda import AbreTienda
                 simulacion.proximo_evento = AbreTienda()
         else:
             # si hay clientes en la cola, entonces el próximo evento puede ser el fin de atención del próximo cliente, o la llegada de un nuevo cliente

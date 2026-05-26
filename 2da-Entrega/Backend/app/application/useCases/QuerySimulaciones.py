@@ -1,6 +1,6 @@
 from typing import List
 
-from application.ports.Simulacion_repository import ISimulacionRepository
+from app.application.ports.Simulacion_repository import ISimulacionRepository
 from app.infrastructure.database.unit_of_work.unit_of_work import UowFactory
 from app.domain.models.Simulacion import Simulacion
 from app.infrastructure.database.mappers.simulacion_mapper import SimulacionMapper

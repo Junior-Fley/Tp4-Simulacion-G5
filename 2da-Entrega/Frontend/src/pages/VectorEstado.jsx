@@ -63,7 +63,10 @@ export const VectorEstado = () => {
     <div className="tabla-page">
 
       {/* SELECTOR */}
-      <div className="mb-3 tabla-selector">
+      <div className="mb-4 tabla-selector d-flex align-items-center gap-3 justify-content-center">
+        <label className="form-label mb-0 fw-semibold text-slate-700">
+          <i className="bi bi-database-fill-gear text-primary me-2"></i>Historial de Simulaciones:
+        </label>
         <select
           className="form-select"
           value={simId || ""}
@@ -74,7 +77,7 @@ export const VectorEstado = () => {
             setPage(1);
           }}
         >
-          <option value="">Seleccionar simulación</option>
+          <option value="">Seleccionar simulación...</option>
 
           {simulaciones.map((sim, index) => (
             <option key={`${sim.id}-${index}`} value={sim.id}>
@@ -85,49 +88,50 @@ export const VectorEstado = () => {
       </div>
 
       {/* CARDS */}
-      <div className="container mt-3">
-        <div className="row g-3 justify-content-center">
+      <div className="kpi-container container mt-2">
+        <div className="row g-4 justify-content-center">
 
-          <div className="col-md-3">
-            <div className="card shadow-sm border-danger text-center">
-              <div className="card-body">
-                <h6>Cant de Clientes No Atendidos por cierre</h6>
-                <h3>
-                  {filas.length > 0
-                    ? filas[filas.length - 1].clientes_no_atendidos
-                    : 0}
-                </h3>
+          <div className="col-md-4">
+            <div className="kpi-card kpi-danger">
+              <div className="kpi-icon">
+                <i className="bi bi-person-x-fill"></i>
               </div>
+              <h6>Clientes No Atendidos por Cierre</h6>
+              <h3>
+                {filas.length > 0
+                  ? filas[filas.length - 1].clientes_no_atendidos
+                  : 0}
+              </h3>
             </div>
           </div>
 
-          <div className="col-md-3">
-            <div className="card shadow-sm border-primary text-center">
-              <div className="card-body">
-                <h6>T.promedio de permanecia de equipo en el taller Hf - Hi </h6>
-                <h3>
-                  {filas.length > 0
-                    ? filas[filas.length - 1].tiempo_de_atencion_total
-                    : "00:00:00"}
-                </h3>
+          <div className="col-md-4">
+            <div className="kpi-card kpi-primary">
+              <div className="kpi-icon">
+                <i className="bi bi-hourglass-split"></i>
               </div>
+              <h6>Permanencia Promedio en Taller (Hf - Hi)</h6>
+              <h3>
+                {filas.length > 0
+                  ? filas[filas.length - 1].tiempo_de_atencion_total
+                  : "00:00:00"}
+              </h3>
             </div>
           </div>
 
-          <div className="col-md-3">
-            <div className="card shadow-sm border-success text-center">
-              <div className="card-body">
-                <h6> Porcentaje del tecnico recep vs reparacion</h6>
-                <h3>
-                  {filas.length > 0
-                    ? filas[filas.length - 1].tiempo_de_reparacion_total
-                    : "00:00:00"}
-                </h3>
+          <div className="col-md-4">
+            <div className="kpi-card kpi-success">
+              <div className="kpi-icon">
+                <i className="bi bi-tools"></i>
               </div>
+              <h6>Porcentaje Técnico: Recep vs Reparación</h6>
+              <h3>
+                {filas.length > 0
+                  ? filas[filas.length - 1].tiempo_de_reparacion_total
+                  : "00:00:00"}
+              </h3>
             </div>
           </div>
-
-          
 
         </div>
       </div>

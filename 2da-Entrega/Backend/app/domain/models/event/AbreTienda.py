@@ -1,3 +1,4 @@
+from __future__ import annotations
 import random
 
 from app.domain.models.event.Evento import Evento

@@ -1,9 +1,10 @@
+from __future__ import annotations
 import random
-from abc import ABC
+from abc import ABC, abstractmethod
 from enum import Enum
 from typing import TYPE_CHECKING
 from app.domain.models.EstadoTecnico import EstadoTecnico
-from domain.models.EstadoEquipo import EstadoEquipo
+from app.domain.models.EstadoEquipo import EstadoEquipo
 
 if TYPE_CHECKING:
     from app.application.useCases.Simular import Simular

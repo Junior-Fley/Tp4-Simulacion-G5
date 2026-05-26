@@ -1,4 +1,4 @@
-from domain.models.EstadoCliente import EstadoCliente
+from app.domain.models.EstadoCliente import EstadoCliente
 
 
 class Cliente:
