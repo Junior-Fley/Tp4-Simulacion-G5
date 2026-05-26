@@ -10,6 +10,7 @@ from app.application.useCases.Simular import Simular
 from app.infrastructure.database.unit_of_work.uow_factory import uow_factory
 from app.application.useCases.QuerySimulaciones import QuerySimulaciones
 from app.application.useCases.CalcularEstadisticas import CalcularEstadisticas
+from app.application.useCases.QueryColecciones import QueryColecciones
 
 router = APIRouter()
 
@@ -48,6 +49,12 @@ def iniciar_simulacion(payload: SimularRequest):
         mensaje="Simulación ejecutada correctamente",
         id_simulacion=str(coleccion_id),
     )
+
+
+@router.get("/simulaciones", response_model=list[int])
+def listar_colecciones():
+    query_colecciones = QueryColecciones(uow_factory)
+    return query_colecciones.listar_ids()
 
 
 @router.get("/simulaciones/{sim_id}/filas", response_model=SimularResponse)

@@ -14,3 +14,7 @@ class ColeccionRepositoryImpl(IColeccionRepository):
         self.session.flush()
 
         return coleccion_orm.id
+
+    def listar_ids(self) -> list[int]:
+        ids = self.session.query(ColeccionORM.id).order_by(ColeccionORM.id).all()
+        return [row[0] for row in ids]

@@ -25,7 +25,7 @@ def create_db_engine(db_url: Optional[str] = None, **overrides) -> Engine:
     - db_url: si no se pasa, asume la estándar
     - overrides: permite ajustar parámetros.
     """
-    db_url = "sqlite:///app/infrastructure/start/bdd.db" if db_url is None else db_url
+    db_url = "sqlite:///../database/bdd.db" if db_url is None else db_url
 
     kwargs = {**_DEFAULT_KWARGS, **overrides}
     return create_engine(db_url, **kwargs)
