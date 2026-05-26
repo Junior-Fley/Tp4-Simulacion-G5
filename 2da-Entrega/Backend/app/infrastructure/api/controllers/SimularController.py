@@ -21,7 +21,6 @@ from pydantic import BaseModel
 class SimulacionCreatedResponse(BaseModel):
     mensaje: str
     id_simulacion: str
-    filas_guardadas: int
 
 
 @router.post("/simulaciones", response_model=SimulacionCreatedResponse)
@@ -45,9 +44,8 @@ def iniciar_simulacion(payload: SimularRequest):
 
     return SimulacionCreatedResponse(
         mensaje="Simulación ejecutada correctamente",
-        id_simulacion= str(coleccion_id),
-        filas_guardadas= 100
-    )# TODO CREAR MÉTODO PARA QUE BUSQUE LA CANTIDAD REAL DE FILAS GUARDADAS EN LA SIMULACIÓN
+        id_simulacion=str(coleccion_id),
+    )
 
 
 @router.get("/simulaciones/{sim_id}/filas", response_model=SimularResponse)
@@ -70,4 +68,8 @@ def listar_filas(sim_id: int, page: int = Query(1, ge=1), size: int = Query(20, 
 
     return SimularResponse(items=items_dto, page=page, size=size, total=total, total_pages=total_pages)
 
+@router.get("/simulaciones/{sim_id}/stats", response_model=SimularResponse)
+def calcular_stats(sim_id: int):
+
+    pass
 #TODO CREAR ENDPOINT PARA OBTENER LAS ESTADÍSTICAS DE LOS ACUMULADORES

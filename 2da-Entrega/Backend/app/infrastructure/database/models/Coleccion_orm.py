@@ -17,3 +17,9 @@ class ColeccionORM(Base):
         "SimulacionORM",
         back_populates="coleccion"
     )
+
+    acumuladores = relationship(
+        "AcumEquiposORM",
+        back_populates="coleccion",
+        cascade="all, delete-orphan"
+    )
