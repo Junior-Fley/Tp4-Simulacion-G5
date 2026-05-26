@@ -1,4 +1,6 @@
 from domain.models.ColaFIFO import ColaFIFO
+from app.domain.services.float_a_hora_service import float_a_hora
+
 
 class ColaEquipos(ColaFIFO):
     def __init__(self):
@@ -15,9 +17,9 @@ class ColaEquipos(ColaFIFO):
                 {
                     "id": elemento.id_equipo,
                     "estado": elemento.estado,
-                    "hora_dejado": elemento.hora_ingreso_taller,
-                    "hora_fin": elemento.horario_fin_reparacion,
-                    "tiempo": elemento.tiempo_de_reparacion
+                    "hora_dejado": float_a_hora(elemento.hora_ingreso_taller) if elemento.hora_ingreso_taller is not None else '',
+                    "hora_fin": float_a_hora(elemento.horario_fin_reparacion) if elemento.horario_fin_reparacion is not None else '',
+                    "tiempo": float_a_hora(elemento.tiempo_de_reparacion) if elemento.tiempo_de_reparacion is not None else '',
                 }
                 for elemento in self.elementos
             ]
