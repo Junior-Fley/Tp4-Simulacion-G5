@@ -91,7 +91,7 @@ export const VectorEstado = () => {
           <div className="col-md-3">
             <div className="card shadow-sm border-danger text-center">
               <div className="card-body">
-                <h6>Clientes No Atendidos</h6>
+                <h6>Cant de Clientes No Atendidos por cierre</h6>
                 <h3>
                   {filas.length > 0
                     ? filas[filas.length - 1].clientes_no_atendidos
@@ -104,7 +104,7 @@ export const VectorEstado = () => {
           <div className="col-md-3">
             <div className="card shadow-sm border-primary text-center">
               <div className="card-body">
-                <h6>Tiempo Atención Total</h6>
+                <h6>T.promedio de permanecia de equipo en el taller Hf - Hi </h6>
                 <h3>
                   {filas.length > 0
                     ? filas[filas.length - 1].tiempo_de_atencion_total
@@ -117,7 +117,7 @@ export const VectorEstado = () => {
           <div className="col-md-3">
             <div className="card shadow-sm border-success text-center">
               <div className="card-body">
-                <h6>Tiempo Reparación Total</h6>
+                <h6> Porcentaje del tecnico recep vs reparacion</h6>
                 <h3>
                   {filas.length > 0
                     ? filas[filas.length - 1].tiempo_de_reparacion_total
