@@ -21,3 +21,5 @@ class ISimulacionRepository(ABC):
     def obtener_filas_simulacion(self, coleccion_id: int, page: int, size: int):
         pass
 
+    def obtener_ultima_fila_simulacion(self, coleccion_id: int):
+        pass

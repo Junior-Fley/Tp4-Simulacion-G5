@@ -5,9 +5,11 @@ from fastapi import APIRouter, HTTPException, Query
 from app.infrastructure.api.DTO.SimulacionItem import SimulacionItem
 from app.infrastructure.api.DTO.SimularRequest import SimularRequest
 from app.infrastructure.api.DTO.SimularResponse import SimularResponse
+from app.infrastructure.api.DTO.SimulacionStatsResponse import SimulacionStatsResponse
 from app.application.useCases.Simular import Simular
 from app.infrastructure.database.unit_of_work.uow_factory import uow_factory
 from app.application.useCases.QuerySimulaciones import QuerySimulaciones
+from app.application.useCases.CalcularEstadisticas import CalcularEstadisticas
 
 router = APIRouter()
 
@@ -21,7 +23,6 @@ from pydantic import BaseModel
 class SimulacionCreatedResponse(BaseModel):
     mensaje: str
     id_simulacion: str
-    filas_guardadas: int
 
 
 @router.post("/simulaciones", response_model=SimulacionCreatedResponse)
@@ -45,9 +46,8 @@ def iniciar_simulacion(payload: SimularRequest):
 
     return SimulacionCreatedResponse(
         mensaje="Simulación ejecutada correctamente",
-        id_simulacion= str(coleccion_id),
-        filas_guardadas= 100
-    )# TODO CREAR MÉTODO PARA QUE BUSQUE LA CANTIDAD REAL DE FILAS GUARDADAS EN LA SIMULACIÓN
+        id_simulacion=str(coleccion_id),
+    )
 
 
 @router.get("/simulaciones/{sim_id}/filas", response_model=SimularResponse)
@@ -70,4 +70,15 @@ def listar_filas(sim_id: int, page: int = Query(1, ge=1), size: int = Query(20, 
 
     return SimularResponse(items=items_dto, page=page, size=size, total=total, total_pages=total_pages)
 
+@router.get("/simulaciones/{sim_id}/stats", response_model=SimulacionStatsResponse)
+def calcular_stats(sim_id: int):
+
+    calcular_estadisticas = CalcularEstadisticas(sim_id, uow_factory)
+
+    try:
+        stats = calcular_estadisticas.calcular_estadisticas()
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    return SimulacionStatsResponse(**stats)
 #TODO CREAR ENDPOINT PARA OBTENER LAS ESTADÍSTICAS DE LOS ACUMULADORES

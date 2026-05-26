@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Table } from "react-bootstrap";
+import { Button, Modal, Table } from "react-bootstrap";
 import simulacionService from "../service/simulacion.service";
 import "../App.css";
 
@@ -16,18 +16,41 @@ export const VectorEstado = () => {
   const [size, setSize] = useState(50);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [detalleFila, setDetalleFila] = useState(null);
+  const [detalleAbierto, setDetalleAbierto] = useState(false);
 
   const mostrarValorVacioNAda = (valor) =>
     valor === -1 ? "" : valor;
 
-  // Calcular máximos de clientes y equipos en la página actual
-  const maxClientes = filas.length > 0
-    ? Math.max(0, ...filas.map(f => f.clientes?.length ?? 0))
-    : 0;
+  const formatoHoraAmPm = (valor) => {
+    if (valor == null || valor === "") return "";
+    if (typeof valor === "string" && valor.includes(":")) return valor;
 
-  const maxEquipos = filas.length > 0
-    ? Math.max(0, ...filas.map(f => f.equipos?.length ?? 0))
-    : 0;
+    const totalSeconds = Math.round(Number(valor) * 60);
+    if (Number.isNaN(totalSeconds)) return "";
+
+    const hours24 = Math.floor(totalSeconds / 3600) % 24;
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const ampm = hours24 >= 12 ? "PM" : "AM";
+    const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
+
+    const h = String(hours12).padStart(2, "0");
+    const m = String(minutes).padStart(2, "0");
+    const s = String(seconds).padStart(2, "0");
+
+    return `${h}:${m}:${s} ${ampm}`;
+  };
+
+  const abrirDetalle = (fila) => {
+    setDetalleFila(fila);
+    setDetalleAbierto(true);
+  };
+
+  const cerrarDetalle = () => {
+    setDetalleAbierto(false);
+    setDetalleFila(null);
+  };
 
   useEffect(() => {
     const sims = JSON.parse(
@@ -145,7 +168,6 @@ export const VectorEstado = () => {
 
             <thead>
               <tr>
-                {/* COLUMNAS FIJAS */}
                 <th>Hora</th>
                 <th>Evento</th>
                 <th>RND Llegada</th>
@@ -166,23 +188,7 @@ export const VectorEstado = () => {
                 <th>T. Atención</th>
                 <th>T. Reparación</th>
                 <th>No Atendidos</th>
-
-                {/* COLUMNAS DINÁMICAS — CLIENTES */}
-                {Array.from({ length: maxClientes }, (_, i) => (
-                  <th key={`ch-cli-${i}`} style={{ minWidth: 130 }}>
-                    Cliente {i + 1} — Estado
-                  </th>
-                ))}
-
-                {/* COLUMNAS DINÁMICAS — EQUIPOS (4 sub-columnas por equipo) */}
-                {Array.from({ length: maxEquipos }, (_, i) => (
-                  <React.Fragment key={`ch-eq-${i}`}>
-                    <th style={{ minWidth: 130 }}>Equipo {i + 1} — Estado</th>
-                    <th style={{ minWidth: 110 }}>Equipo {i + 1} — Dejado</th>
-                    <th style={{ minWidth: 110 }}>Equipo {i + 1} — Fin</th>
-                    <th style={{ minWidth: 110 }}>Equipo {i + 1} — Tiempo</th>
-                  </React.Fragment>
-                ))}
+                <th>Detalle</th>
               </tr>
             </thead>
 
@@ -194,9 +200,7 @@ export const VectorEstado = () => {
                     <tr className="table-primary">
                       <td
                         colSpan={
-                          20
-                          + maxClientes
-                          + maxEquipos * 4
+                          21
                         }
                         className="text-center fw-bold"
                       >
@@ -206,7 +210,6 @@ export const VectorEstado = () => {
                   )}
 
                   <tr>
-                    {/* CELDAS FIJAS */}
                     <td>{fila.hora}</td>
                     <td>{fila.evento}</td>
                     <td>{mostrarValorVacioNAda(fila.rnd_llegada)}</td>
@@ -233,23 +236,15 @@ export const VectorEstado = () => {
                     <td>{fila.tiempo_de_atencion_total}</td>
                     <td>{fila.tiempo_de_reparacion_total}</td>
                     <td>{fila.clientes_no_atendidos}</td>
-
-                    {/* CELDAS DINÁMICAS — CLIENTES */}
-                    {Array.from({ length: maxClientes }, (_, i) => (
-                      <td key={`fila-${index}-cli-${i}`}>
-                        {fila.clientes?.[i]?.estado ?? ""}
-                      </td>
-                    ))}
-
-                    {/* CELDAS DINÁMICAS — EQUIPOS */}
-                    {Array.from({ length: maxEquipos }, (_, i) => (
-                      <React.Fragment key={`fila-${index}-eq-${i}`}>
-                        <td>{fila.equipos?.[i]?.estado ?? ""}</td>
-                        <td>{fila.equipos?.[i]?.hora_dejado ?? ""}</td>
-                        <td>{fila.equipos?.[i]?.hora_fin ?? ""}</td>
-                        <td>{fila.equipos?.[i]?.tiempo ?? ""}</td>
-                      </React.Fragment>
-                    ))}
+                    <td>
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={() => abrirDetalle(fila)}
+                      >
+                        Ver
+                      </Button>
+                    </td>
                   </tr>
 
                 </React.Fragment>
@@ -295,11 +290,65 @@ export const VectorEstado = () => {
         >
           <option value={10}>10</option>
           <option value={50}>50</option>
-          <option value={100}>100</option>
-          <option value={500}>500</option>
         </select>
 
       </div>
+
+      {/* DETALLE */}
+      <Modal
+        show={detalleAbierto}
+        onHide={cerrarDetalle}
+        size="lg"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Detalle de fila</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="mb-3">
+            <h6>Clientes</h6>
+            {detalleFila?.clientes?.length ? (
+              <ul className="mb-0">
+                {detalleFila.clientes.map((cliente, idx) => (
+                  <li key={cliente.id ?? `cliente-${idx}`}>
+                    Cliente {cliente.id ?? idx + 1} - {cliente.estado ?? ""}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <span>Sin clientes</span>
+            )}
+          </div>
+          <div>
+            <h6>Equipos</h6>
+            {detalleFila?.equipos?.length ? (
+              <ul className="mb-0">
+                {detalleFila.equipos.map((equipo, idx) => (
+                  <li key={equipo.id ?? `equipo-${idx}`}>
+                    Equipo {equipo.id ?? idx + 1} - {equipo.estado ?? ""}
+                    {equipo.hora_dejado
+                      ? ` - Dejado: ${formatoHoraAmPm(equipo.hora_dejado)}`
+                      : ""}
+                    {equipo.hora_fin
+                      ? ` - Fin: ${formatoHoraAmPm(equipo.hora_fin)}`
+                      : ""}
+                    {equipo.tiempo != null && equipo.tiempo !== ""
+                      ? ` - Tiempo: ${Number(equipo.tiempo).toFixed(2)} min`
+                      : ""}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <span>Sin equipos</span>
+            )}
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={cerrarDetalle}>
+            Cerrar
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
     </div>
   );

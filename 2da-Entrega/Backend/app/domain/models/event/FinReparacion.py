@@ -24,6 +24,17 @@ class FinReparacion(Evento):
         # Aumentamos el acumulador del tecnico
         simulacion.tecnico.acum_reparacion += simulacion.cola_equipos.primero().tiempo_reparacion_restante
 
+        # antes de retirar de la cola al equipo, debería asignarle su valor de tiempo fin
+        equipo_reparado = simulacion.cola_equipos.primero()
+        equipo_reparado.horario_fin_reparacion = simulacion.hora_actual
+
+        # debo acumular el tiempo que pasaron los equipos en el local desde que entraron hasta que salieron
+        tiempo_transcurrido_en_local = equipo_reparado.horario_fin_reparacion - equipo_reparado.hora_ingreso_taller
+
+        # acumulo el tiempo total que el equipo pasó en el taller
+        simulacion.acum_tiempo_equipos += tiempo_transcurrido_en_local
+
+
         # Retiro el equipo que se acaba de reparar de la cola de equipos
         # si retiro un equipo de la cola, el caché se vuelve dirty
         simulacion.cola_equipos.marcar_dirty()

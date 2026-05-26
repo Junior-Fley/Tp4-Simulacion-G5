@@ -46,6 +46,14 @@ class SimulacionRepositoryImpl(ISimulacionRepository):
         items = query.order_by(SimulacionORM.id).offset((page - 1) * size).limit(size).all()
         return items, total
 
+    def obtener_ultima_fila_simulacion(self, coleccion_id: int):
+        return (
+            self.session.query(SimulacionORM)
+            .filter_by(coleccion_id=coleccion_id)
+            .order_by(SimulacionORM.id.desc())
+            .first()
+        )
+
     def guardar_filas_bulk(self, filas) -> None:
         filas_dict = [
             {

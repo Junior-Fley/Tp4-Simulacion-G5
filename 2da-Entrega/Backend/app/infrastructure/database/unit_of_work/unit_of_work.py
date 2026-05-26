@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.application.ports.Simulacion_repository import ISimulacionRepository
 from app.application.ports.Coleccion_repository import IColeccionRepository
+from application.ports.acumulador_repository import IAcumuladorRepository
 
 SessionFactory = Callable[[], Session]
 
@@ -10,6 +11,7 @@ class IUnitOfWork(Protocol):
 
     simu_repo: ISimulacionRepository
     colec_repo: IColeccionRepository
+    acum_repo: IAcumuladorRepository
     session: Session | None
 
     def __enter__(self) -> 'IUnitOfWork':

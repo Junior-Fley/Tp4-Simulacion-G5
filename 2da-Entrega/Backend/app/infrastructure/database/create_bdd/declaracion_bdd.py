@@ -15,6 +15,12 @@ class ColeccionSimulaciones(Base):
         cascade="all, delete-orphan"
     )
 
+    acumuladores = relationship(
+        "AcumEquipos",
+        back_populates="coleccion",
+        cascade="all, delete-orphan"
+    )
+
 
 class Simulacion(Base):
     __tablename__ = 'simulacion'
@@ -50,23 +56,21 @@ class Simulacion(Base):
     equipos = Column(JSON)
 
 
-class Clientes(Base):
-    __tablename__ = 'clientes'
+class AcumEquipos(Base):
+    __tablename__ = 'acum_equipos'
 
     id = Column(Integer, primary_key=True)
-    estado = Column(String)
-    hora_llegada = Column(Float)
-    hora_inicio_atencion = Column(Float)
-    hora_fin_atencion = Column(Float)
 
-class Equipos(Base):
-    __tablename__ = 'equipos'
+    acumulador = Column(Float)
+    contador = Column(Integer)
 
-    id = Column(Integer, primary_key=True)
-    estado = Column(String)
-    hora_ingreso_taller = Column(Float)
-    hora_inicio_reparacion = Column(Float)
-    hora_fin_reparacion = Column(Float)
-    tiempo_de_reparacion = Column(Float)
-    tiempo_de_reparacion_acumulado = Column(Float)
-    tiempo_de_reparacion_restantes = Column(Float)
+    coleccion_id = Column(
+        Integer,
+        ForeignKey('coleccion_simulaciones.id'),
+        nullable=False
+    )
+
+    coleccion = relationship(
+        "ColeccionSimulaciones",
+        back_populates="acumuladores"
+    )

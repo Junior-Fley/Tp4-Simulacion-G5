@@ -24,3 +24,10 @@ print(truncar_a_decimales(0.99968744587923789))
 print(truncar_a_decimales(0.0014123540))
 
 print(truncar_a_decimales(0.5676554645))
+
+# Runner minimo para validar conversion de minutos a hh:mm:ss
+if __name__ == "__main__":
+    from app.domain.services.float_a_hora_service import float_a_hora
+
+    print(float_a_hora(0))
+    print(float_a_hora(1065.6659010842052))
