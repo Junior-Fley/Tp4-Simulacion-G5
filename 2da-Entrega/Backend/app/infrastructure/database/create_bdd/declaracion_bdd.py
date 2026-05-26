@@ -62,6 +62,7 @@ class AcumEquipos(Base):
     id = Column(Integer, primary_key=True)
 
     acumulador = Column(Float)
+    contador = Column(Integer)
 
     coleccion_id = Column(
         Integer,

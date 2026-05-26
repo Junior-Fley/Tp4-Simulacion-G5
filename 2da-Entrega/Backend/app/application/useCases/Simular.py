@@ -317,7 +317,7 @@ class Simular:
             if self.repo_override is not None:
                 uow.simu_repo = self.repo_override
             uow.simu_repo.guardar_filas_bulk(self.filas_a_guardar)
-            uow.acum_repo.guardar_acumulador(self.id_coleccion, self.acum_tiempo_equipos)
+            uow.acum_repo.guardar_acumulador(self.id_coleccion, self.acum_tiempo_equipos, self.contador_equipos)
             self.filas_a_guardar = []
 
         return self.id_coleccion

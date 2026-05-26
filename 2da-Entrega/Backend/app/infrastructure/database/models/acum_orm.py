@@ -18,6 +18,11 @@ class AcumEquiposORM(Base):
         nullable=True
     )
 
+    contador: Mapped[float] = mapped_column(
+        Integer,
+        nullable=True
+    )
+
     coleccion_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey('coleccion_simulaciones.id'),
