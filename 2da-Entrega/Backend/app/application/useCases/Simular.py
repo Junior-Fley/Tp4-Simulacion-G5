@@ -8,13 +8,9 @@ from app.domain.models.EstadoTecnico import EstadoTecnico
 from app.domain.models.event.LlegaCliente import LlegaCliente
 from app.application.ports.Simulacion_repository import ISimulacionRepository
 from app.infrastructure.database.unit_of_work.unit_of_work_impl import UowFactory
-from app.domain.models.event.AbreTienda import AbreTienda
-from app.domain.models.event.FinReparacion import FinReparacion
 from app.domain.models.ColaClientes import ColaClientes
 from app.domain.models.ColaEquipos import ColaEquipos
-from domain.models.EstadoCliente import EstadoCliente
-from domain.models.event.FinAtencion import FinAtencion
-
+from app.domain.services.truncar_service import truncar_a_decimales
 
 class Simular:
     def __init__(self, uow_factory: UowFactory, x_tiempo: float, i_iteraciones: int, j_hora_inicio: float = 600,
@@ -80,9 +76,6 @@ class Simular:
     def cerrar_tienda(self):
         self.local_abierto = False
 
-    def programar_reapertura(self):
-        self.evento = AbreTienda()
-        self.proximo_evento = AbreTienda()
 
     @staticmethod
     def exponencial_negativa(media: float, rnd: float) -> float:
@@ -102,7 +95,6 @@ class Simular:
 
         return f"{horas:02d}:{minutos_restantes:02d}:{segundos:02d}"
 
-
     def guardar_fila_reparacion(self,):
         if self.cola_equipos.cantidad() == 0:
             self.filas_a_guardar.append((self.id_coleccion, self.float_a_hora(self.hora_actual), self.evento.nombre, -1,
@@ -118,7 +110,7 @@ class Simular:
             self.filas_a_guardar.append((self.id_coleccion, self.float_a_hora(self.hora_actual), self.evento.nombre, -1,
                                '', self.float_a_hora(self.hora_proxima_llegada),
                                self.tecnico.estado, -1, '','', -1,
-                               '', -1, None, self.rnd_reparacion, self.float_a_hora(self.tiempo_hasta_reparacion),
+                               '', -1, None, truncar_a_decimales(self.rnd_reparacion), self.float_a_hora(self.tiempo_hasta_reparacion),
                                self.cola_clientes.cantidad(), self.cola_equipos.cantidad(),
                                self.float_a_hora(self.tecnico.acum_atencion), self.float_a_hora(self.tecnico.acum_reparacion),
                                self.clientes_no_atendidos,
@@ -129,8 +121,8 @@ class Simular:
             # si el cliente que atendí era el último en la cola, entonces no hay un próximo cliente para atender, por lo tanto no se le calcula el tiempo de atención al próximo cliente, y se guarda la fila en la BDD, sin tiempo de atención
             self.filas_a_guardar.append((self.id_coleccion, self.float_a_hora(self.hora_actual), self.evento.nombre, -1,
                                '', self.float_a_hora(self.hora_proxima_llegada),
-                               self.tecnico.estado, -1, '', '', self.rnd_presupuesto,
-                               self.presupuesto, self.rnd_acepta, self.acepto, -1, '',
+                               self.tecnico.estado, -1, '', '', truncar_a_decimales(self.rnd_presupuesto,3),
+                               self.presupuesto, truncar_a_decimales(self.rnd_acepta,3), self.acepto, -1, '',
                                self.cola_clientes.cantidad(), self.cola_equipos.cantidad(),
                                self.float_a_hora(self.tecnico.acum_atencion),
                                self.float_a_hora(self.tecnico.acum_reparacion),
@@ -140,9 +132,9 @@ class Simular:
             # si el cliente que atendí no era el último en la cola, entonces hay un próximo cliente para atender, por lo tanto se le calcula el tiempo de atención al próximo cliente, y se guarda la fila en la BDD, con tiempo de atención
             self.filas_a_guardar.append((self.id_coleccion, self.float_a_hora(self.hora_actual), self.evento.nombre, -1,
                                '', self.float_a_hora(self.hora_proxima_llegada),
-                               self.tecnico.estado, self.rnd_atencion, self.float_a_hora(self.tiempo_hasta_fin_de_atencion),
-                               self.float_a_hora(self.hora_proximo_fin_atencion), self.rnd_presupuesto,
-                               self.presupuesto, self.rnd_acepta, self.acepto, -1, '',
+                               self.tecnico.estado, truncar_a_decimales(self.rnd_atencion,3), self.float_a_hora(self.tiempo_hasta_fin_de_atencion),
+                               self.float_a_hora(self.hora_proximo_fin_atencion), truncar_a_decimales(self.rnd_presupuesto,3),
+                               self.presupuesto, truncar_a_decimales(self.rnd_acepta,3), self.acepto, -1, '',
                                self.cola_clientes.cantidad(), self.cola_equipos.cantidad(),
                                self.float_a_hora(self.tecnico.acum_atencion),
                                self.float_a_hora(self.tecnico.acum_reparacion),
@@ -154,10 +146,10 @@ class Simular:
             # pero el próximo evento es la reparación de un equipo, entonces se le calcula el tiempo de reparación al próximo equipo, y se guarda la fila en la BDD, con tiempo de reparación
             self.filas_a_guardar.append((self.id_coleccion, self.float_a_hora(self.hora_actual), self.evento.nombre, -1, '',
                                self.float_a_hora(self.hora_proxima_llegada),
-                               self.tecnico.estado, -1, '', '',self.rnd_presupuesto, self.presupuesto,
-                               self.rnd_acepta,
+                               self.tecnico.estado, -1, '', '', truncar_a_decimales(self.rnd_presupuesto,3), self.presupuesto,
+                               truncar_a_decimales(self.rnd_acepta,3),
                                self.acepto,
-                               self.rnd_reparacion, self.float_a_hora(self.tiempo_hasta_reparacion),
+                               truncar_a_decimales(self.rnd_reparacion,3), self.float_a_hora(self.tiempo_hasta_reparacion),
                                self.cola_clientes.cantidad(), self.cola_equipos.cantidad(),
                                self.float_a_hora(self.tecnico.acum_atencion),
                                self.float_a_hora(self.tecnico.acum_reparacion),
@@ -168,10 +160,10 @@ class Simular:
 
         if self.hora_actual > self.hora_cierre and self.cola_equipos.cantidad() > 0:
             self.filas_a_guardar.append((self.id_coleccion, self.float_a_hora(self.hora_actual), self.evento.nombre,
-                                         self.rnd_llegada, self.float_a_hora(self.tiempo_hasta_proxima_llegada),
+                                         truncar_a_decimales(self.rnd_llegada,3), self.float_a_hora(self.tiempo_hasta_proxima_llegada),
                                          self.float_a_hora(self.hora_proxima_llegada), self.tecnico.estado,
                                          -1, '', '', -1, '', -1,
-                                         None, self.rnd_reparacion, self.float_a_hora(self.tiempo_hasta_reparacion),
+                                         None, truncar_a_decimales(self.rnd_reparacion,3), self.float_a_hora(self.tiempo_hasta_reparacion),
                                          self.cola_clientes.cantidad(), self.cola_equipos.cantidad(),
                                          self.float_a_hora(self.tecnico.acum_atencion),
                                          self.float_a_hora(self.tecnico.acum_reparacion),
@@ -181,10 +173,10 @@ class Simular:
 
         elif self.hora_actual > self.hora_cierre and self.cola_equipos.cantidad() == 0:
             self.filas_a_guardar.append((self.id_coleccion, self.float_a_hora(self.hora_actual), self.evento.nombre,
-                                         self.rnd_llegada, self.float_a_hora(self.tiempo_hasta_proxima_llegada),
+                                         truncar_a_decimales(self.rnd_llegada,3), self.float_a_hora(self.tiempo_hasta_proxima_llegada),
                                          self.float_a_hora(self.hora_proxima_llegada), self.tecnico.estado,
                                          -1, '', '', -1, '', -1,
-                                         None, self.rnd_reparacion, '',
+                                         None, truncar_a_decimales(self.rnd_reparacion,3), '',
                                          self.cola_clientes.cantidad(), self.cola_equipos.cantidad(),
                                          self.float_a_hora(self.tecnico.acum_atencion),
                                          self.float_a_hora(self.tecnico.acum_reparacion),
@@ -196,9 +188,9 @@ class Simular:
         if self.cola_clientes.cantidad() == 1:
             # si el cliente que acaba de llegar es el único en la cola, entonces se atiende inmediatamente, se le calcula el tiempo de atención, y se guarda la fila en la BDD, con tiempo de atención
             self.filas_a_guardar.append((self.id_coleccion, self.float_a_hora(self.hora_actual), self.evento.nombre,
-                                         self.rnd_llegada, self.float_a_hora(self.tiempo_hasta_proxima_llegada),
+                                         truncar_a_decimales(self.rnd_llegada,3), self.float_a_hora(self.tiempo_hasta_proxima_llegada),
                                          self.float_a_hora(self.hora_proxima_llegada), self.tecnico.estado,
-                                         self.rnd_atencion, self.float_a_hora(self.tiempo_hasta_fin_de_atencion),
+                                         truncar_a_decimales(self.rnd_atencion,3), self.float_a_hora(self.tiempo_hasta_fin_de_atencion),
                                          self.float_a_hora(self.hora_proximo_fin_atencion), -1,'', -1, None, -1, '',
                                          self.cola_clientes.cantidad(), self.cola_equipos.cantidad(),
                                          self.float_a_hora(self.tecnico.acum_atencion),
@@ -208,7 +200,7 @@ class Simular:
         else:
             # si el cliente no es el primero en la cola, entonces no se atiende inmediatamente, no se le calcula el tiempo de atención, y se guarda la fila en la BDD, sin tiempo de atención
             self.filas_a_guardar.append((self.id_coleccion, self.float_a_hora(self.hora_actual), self.evento.nombre,
-                                         self.rnd_llegada, self.float_a_hora(self.tiempo_hasta_proxima_llegada),
+                                         truncar_a_decimales(self.rnd_llegada,3), self.float_a_hora(self.tiempo_hasta_proxima_llegada),
                                          self.float_a_hora(self.hora_proxima_llegada), self.tecnico.estado,
                                          -1, '', self.float_a_hora(self.hora_proximo_fin_atencion), -1, '', -1,
                                          None, -1, '', self.cola_clientes.cantidad(),
@@ -218,6 +210,24 @@ class Simular:
                                          self.clientes_no_atendidos,
                                          self.cola_clientes.serialize(), self.cola_equipos.serialize()))
 
+    def guarda_fila_abre_tienda(self):
+        self.filas_a_guardar.append((
+                self.id_coleccion, self.float_a_hora(self.hora_actual),
+                self.evento.nombre,
+                truncar_a_decimales(self.rnd_llegada, 3),
+                self.float_a_hora(self.tiempo_hasta_proxima_llegada),
+                self.float_a_hora(self.hora_proxima_llegada),
+                self.tecnico.estado,
+                -1,
+                '', '',
+                -1,
+                '', -1, None,
+                -1,
+                '', 0, 0,
+                '', '', 0,
+                self.cola_clientes.serialize(),
+                self.cola_equipos.serialize()
+            ))
     def ejecutar_simulacion(self) -> int:
         # creamos la nueva colección de simulaciones en la bdd
         with self.uow_factory() as uow:
@@ -247,7 +257,7 @@ class Simular:
             uow.simu_repo.guardar_fila(
                 self.id_coleccion, self.float_a_hora(self.hora_actual),
                 'Abre Tienda',
-                round(self.rnd_llegada, 3),
+                truncar_a_decimales(self.rnd_llegada, 3),
                 self.float_a_hora(self.tiempo_hasta_proxima_llegada),
                 self.float_a_hora(self.hora_proxima_llegada),
                 self.tecnico.estado,
@@ -267,7 +277,7 @@ class Simular:
         self.evento = LlegaCliente()
 
         for i in range(self.i_iteraciones):
-
+            # region guardado en bulk de filas
             # si mi cantidad de filas en mi vector de filas a guardar es mayor o igual al tamaño definido para commit
             # a la bdd, entonces guardo las filas y limpio el vector de filas a guardar.
             if len(self.filas_a_guardar) >= self.batch_size:
@@ -278,71 +288,27 @@ class Simular:
 
                 self.filas_a_guardar = []
 
-            if self.local_abierto:
-                self.evento.ejecutar_accion(self)
-                # definir que datos corresponden guardar en esta fila y guardarlos en el vector de filas
-                # para después guardar en BDD
-                match self.evento.nombre:
-                    case "Llega_Cliente":
-                        self.guardar_fila_llega_cliente()
-                    case "Fin_Atención":
-                        self.guardar_fila_atencion()
-                    case "Fin_Reparación":
-                        self.guardar_fila_reparacion()
-                    case "Abre_Tienda":
-                        pass
 
-                self.evento = self.proximo_evento
+            #endregion guardado en bulk de filas
 
-                if self.hora_actual >= self.hora_cierre:
-                    self.local_abierto = False
-                    if self.cola_clientes.cantidad() > 0 and self.cola_clientes.primero().estado == EstadoCliente.SIENDO_ATENDIDO.value:
-                        self.evento = FinAtencion()
-                    else:
-                        self.evento = FinReparacion() if self.cola_equipos.cantidad() > 0 else AbreTienda()
-                    self.proximo_evento = FinReparacion()
+            # ejecutar la accion correspondiente al evento actual, esto debería ser autosuficiente y encargarse
+            # de gestionar las transiciones a otros eventos mientras la tienda este abierta y también cuando cierre o
+            # vaya a reabrir
+            self.evento.ejecutar_accion(self)
 
-            else:
-                if self.cola_equipos.cantidad() > 0:
-                    self.evento.ejecutar_accion(self)
-
-                    # guardar fila simulada en el vector de simulaciones
+            # definir que datos corresponden guardar en esta fila y guardarlos en el vector de filas
+            # para después guardar en BDD
+            match self.evento.nombre:
+                case "Llega_Cliente":
+                    self.guardar_fila_llega_cliente()
+                case "Fin_Atención":
+                    self.guardar_fila_atencion()
+                case "Fin_Reparación":
                     self.guardar_fila_reparacion()
+                case "Abre_Tienda":
+                    self.guarda_fila_abre_tienda()
 
-                    self.evento = self.proximo_evento
-                else:
-                    self.evento = AbreTienda()
-                    self.evento.ejecutar_accion(self)
-                    self.proximo_evento = LlegaCliente()
-
-                    # guardar fila simulada en el vector de simulaciones
-                    self.filas_a_guardar.append((
-                        self.id_coleccion,
-                        self.float_a_hora(self.hora_actual),
-                        self.evento.nombre,
-                        round(self.rnd_llegada, 3),
-                        self.float_a_hora(self.tiempo_hasta_proxima_llegada),
-                        self.float_a_hora(self.hora_proxima_llegada),
-                        self.tecnico.estado,
-                        -1,
-                        '',
-                        '',
-                        -1,
-                        '',
-                        -1,
-                        None,
-                        -1,
-                        '',
-                        0,
-                        0,
-                        '',
-                        '',
-                        0,
-                        self.cola_clientes.serialize(),
-                        self.cola_equipos.serialize()
-                    ))
-
-                    self.evento = self.proximo_evento
+            self.evento = self.proximo_evento
 
         # si ya terminó la ejecución de la simulación, pero aún tengo filas en mi vector de filas a guardar, entonces guardo las filas restantes en la bdd
 
