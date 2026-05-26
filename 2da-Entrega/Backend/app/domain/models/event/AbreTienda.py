@@ -16,13 +16,24 @@ class AbreTienda(Evento):
         super().__init__("Abre_Tienda")
 
     def ejecutar_accion(self, simulacion: Simular):
-        simulacion.hora_proximo_fin_atencion = None
-        simulacion.clientes_no_atendidos += simulacion.cola_clientes.cantidad()
-        for cliente in simulacion.cola_clientes.elementos:
-            cliente.estado = EstadoCliente.NO_ATENDIDO_POR_CIERRE.value
-        simulacion.cola_clientes.marcar_dirty()
-        simulacion.cola_clientes.serialize()
-        simulacion.cola_clientes.vaciar()
+        # dejar todas las filas como están al principio de una nueva simulación
+        simulacion.hora_proximo_fin_atencion = 0
+        simulacion.hora_proximo_fin_reparacion = None
+        simulacion.tiempo_hasta_reparacion = 0
+        simulacion.presupuesto = ''
+        simulacion.rnd_reparacion = 0
+        simulacion.rnd_presupuesto = 0
+        simulacion.rnd_llegada = 0
+        simulacion.rnd_atencion = 0
+        simulacion.rnd_acepta = 0
+        simulacion.hora_proxima_llegada = 0
+        simulacion.hora_proximo_fin_atencion = 0
+        simulacion.hora_actual = 0
+        simulacion.tiempo_hasta_proxima_llegada = 0
+        simulacion.tiempo_hasta_fin_de_atencion = 0
+        simulacion.tiempo_hasta_reparacion = 0
+        simulacion.acepto = None
+        simulacion.cierre = False
 
         simulacion.hora_actual = simulacion.hora_apertura
         simulacion.local_abierto = True
