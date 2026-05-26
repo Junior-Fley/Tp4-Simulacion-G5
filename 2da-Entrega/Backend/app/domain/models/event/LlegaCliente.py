@@ -1,3 +1,4 @@
+from __future__ import annotations
 from app.domain.models.Cliente import Cliente
 from app.domain.models.EstadoCliente import EstadoCliente
 from app.domain.models.event.Evento import Evento

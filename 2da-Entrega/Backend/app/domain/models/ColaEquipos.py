@@ -1,6 +1,5 @@
-from domain.models.ColaFIFO import ColaFIFO
+from app.domain.models.ColaFIFO import ColaFIFO
 from app.domain.services.float_a_hora_service import float_a_hora
-
 
 class ColaEquipos(ColaFIFO):
     def __init__(self):

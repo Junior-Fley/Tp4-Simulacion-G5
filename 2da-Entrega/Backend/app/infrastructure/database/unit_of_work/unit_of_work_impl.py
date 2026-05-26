@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.infrastructure.database.unit_of_work.unit_of_work import IUnitOfWork
 from app.infrastructure.database.repositories.Simulacion_repository_impl import SimulacionRepositoryImpl
 from app.infrastructure.database.repositories.Coleccion_repository_impl import ColeccionRepositoryImpl
-from infrastructure.database.repositories.acum_reposiroty_impl import AcumEquiposRepositoryImpl
+from app.infrastructure.database.repositories.acum_reposiroty_impl import AcumEquiposRepositoryImpl
 
 SessionFactory = Callable[[], Session]
 

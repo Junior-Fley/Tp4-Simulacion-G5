@@ -105,12 +105,14 @@ const FormularioVar = () => {
     label,
     name,
     type = "number",
-    rules = {}
+    rules = {},
+    icon = ""
   ) => (
 
     <div className="mb-3">
 
       <label className="form-label">
+        {icon && <i className={`bi ${icon}`}></i>}
         {label}
       </label>
 
@@ -142,7 +144,7 @@ const FormularioVar = () => {
   <div className="sim-card">
 
     <h4 className="sim-title">
-      Iniciar Simulación
+      <i className="bi bi-cpu"></i> Parámetros del Simulador
     </h4>
 
     {mensaje && (
@@ -161,7 +163,8 @@ const FormularioVar = () => {
           "number",
           {
             min: { value: 1, message: "Mínimo 1" },
-          }
+          },
+          "bi-clock-history"
         )}
 
         {campo(
@@ -170,13 +173,16 @@ const FormularioVar = () => {
           "number",
           {
             min: { value: 1, message: "Mínimo 1" },
-          }
+          },
+          "bi-arrow-repeat"
         )}
 
         {campo(
           "Hora de inicio",
           "hora_inicio",
-          "time"
+          "time",
+          {},
+          "bi-hourglass-split"
         )}
 
       </div>
@@ -187,7 +193,16 @@ const FormularioVar = () => {
           className="btn btn-primary sim-btn"
           disabled={cargando}
         >
-          {cargando ? "Generando..." : "Simular"}
+          {cargando ? (
+            <>
+              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              Generando...
+            </>
+          ) : (
+            <>
+              <i className="bi bi-play-fill"></i> Simular
+            </>
+          )}
         </button>
       </div>
 

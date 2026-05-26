@@ -1,3 +1,4 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections import deque
 from dataclasses import dataclass, field
@@ -5,8 +6,8 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from domain.models.Cliente import Cliente
-    from domain.models.Equipo import Equipo
+    from app.domain.models.Cliente import Cliente
+    from app.domain.models.Equipo import Equipo
 
 
 @dataclass
