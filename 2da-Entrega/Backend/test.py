@@ -1,3 +1,6 @@
+import math
+
+
 def minutos_a_hora(minutos: float) -> str:
     total_segundos = round(minutos * 60)
 
@@ -9,3 +12,15 @@ def minutos_a_hora(minutos: float) -> str:
 
 
 print(minutos_a_hora(1065.6659010842052))
+
+
+def truncar_a_decimales(valor: float, decimales: int = 3) -> float:
+    factor = 10 ** decimales
+    return math.trunc(valor * factor) / factor
+
+
+print(truncar_a_decimales(0.99968744587923789))
+
+print(truncar_a_decimales(0.0014123540))
+
+print(truncar_a_decimales(0.5676554645))
