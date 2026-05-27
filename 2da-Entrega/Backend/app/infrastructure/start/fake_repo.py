@@ -1,7 +1,7 @@
 from typing import Iterable, Tuple
 
 from app.application.ports.Simulacion_repository import ISimulacionRepository
-from domain.models.Colas.ColaFIFO import ColaFIFO
+from app.domain.models.Colas.ColaFIFO import ColaFIFO
 
 
 class FakeRepo(ISimulacionRepository):

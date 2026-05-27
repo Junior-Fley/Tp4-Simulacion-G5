@@ -1,4 +1,4 @@
-from domain.models.Colas.ColaFIFO import ColaFIFO
+from app.domain.models.Colas.ColaFIFO import ColaFIFO
 
 
 class ColaClientes(ColaFIFO):

@@ -1,15 +1,15 @@
 import math
 import random
 from typing import List, Tuple, Any
-from domain.models.Colas.ColaFIFO import ColaFIFO
+from app.domain.models.Colas.ColaFIFO import ColaFIFO
 from app.domain.models.event.Evento import Evento
 from app.domain.models.Tecnico import Tecnico
 from app.domain.models.EstadoTecnico import EstadoTecnico
 from app.domain.models.event.LlegaCliente import LlegaCliente
 from app.application.ports.Simulacion_repository import ISimulacionRepository
 from app.infrastructure.database.unit_of_work.unit_of_work_impl import UowFactory
-from domain.models.Colas.ColaClientes import ColaClientes
-from domain.models.Colas.ColaEquipos import ColaEquipos
+from app.domain.models.Colas.ColaClientes import ColaClientes
+from app.domain.models.Colas.ColaEquipos import ColaEquipos
 from app.domain.services.truncar_service import truncar_a_decimales
 
 class Simular:

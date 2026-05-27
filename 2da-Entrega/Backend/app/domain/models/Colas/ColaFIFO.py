@@ -60,7 +60,7 @@ class ColaFIFO(ABC):
     @abstractmethod
     def marcar_dirty(self):
         pass
-
+    
     @abstractmethod
     def marcar_dirty_segunda(self):
         pass
