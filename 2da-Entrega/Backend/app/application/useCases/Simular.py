@@ -279,38 +279,43 @@ class Simular:
         self.evento = LlegaCliente()
 
         for i in range(self.i_iteraciones):
-            # region guardado en bulk de filas
-            # si mi cantidad de filas en mi vector de filas a guardar es mayor o igual al tamaño definido para commit
-            # a la bdd, entonces guardo las filas y limpio el vector de filas a guardar.
-            if len(self.filas_a_guardar) >= self.batch_size:
-                with self.uow_factory() as uow:
-                    if self.repo_override is not None:
-                        uow.simu_repo = self.repo_override
-                    uow.simu_repo.guardar_filas_bulk(self.filas_a_guardar)
 
-                self.filas_a_guardar = []
+            #Hay que cortar el bucle si se llegó a la hora de cierre x_tiempo
+            if self.hora_actual < self.x_tiempo:
+                # region guardado en bulk de filas
+                # si mi cantidad de filas en mi vector de filas a guardar es mayor o igual al tamaño definido para commit
+                # a la bdd, entonces guardo las filas y limpio el vector de filas a guardar.
+                if len(self.filas_a_guardar) >= self.batch_size:
+                    with self.uow_factory() as uow:
+                        if self.repo_override is not None:
+                            uow.simu_repo = self.repo_override
+                        uow.simu_repo.guardar_filas_bulk(self.filas_a_guardar)
+
+                    self.filas_a_guardar = []
 
 
-            #endregion guardado en bulk de filas
+                #endregion guardado en bulk de filas
 
-            # ejecutar la accion correspondiente al evento actual, esto debería ser autosuficiente y encargarse
-            # de gestionar las transiciones a otros eventos mientras la tienda este abierta y también cuando cierre o
-            # vaya a reabrir
-            self.evento.ejecutar_accion(self)
+                # ejecutar la accion correspondiente al evento actual, esto debería ser autosuficiente y encargarse
+                # de gestionar las transiciones a otros eventos mientras la tienda este abierta y también cuando cierre o
+                # vaya a reabrir
+                self.evento.ejecutar_accion(self)
 
-            # definir que datos corresponden guardar en esta fila y guardarlos en el vector de filas
-            # para después guardar en BDD
-            match self.evento.nombre:
-                case "Llega_Cliente":
-                    self.guardar_fila_llega_cliente()
-                case "Fin_Atención":
-                    self.guardar_fila_atencion()
-                case "Fin_Reparación":
-                    self.guardar_fila_reparacion()
-                case "Abre_Tienda":
-                    self.guarda_fila_abre_tienda()
+                # definir que datos corresponden guardar en esta fila y guardarlos en el vector de filas
+                # para después guardar en BDD
+                match self.evento.nombre:
+                    case "Llega_Cliente":
+                        self.guardar_fila_llega_cliente()
+                    case "Fin_Atención":
+                        self.guardar_fila_atencion()
+                    case "Fin_Reparación":
+                        self.guardar_fila_reparacion()
+                    case "Abre_Tienda":
+                        self.guarda_fila_abre_tienda()
 
-            self.evento = self.proximo_evento
+                self.evento = self.proximo_evento
+
+
 
         # si ya terminó la ejecución de la simulación, pero aún tengo filas en mi vector de filas a guardar, entonces guardo las filas restantes en la bdd
 

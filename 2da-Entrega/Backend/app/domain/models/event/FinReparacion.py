@@ -28,6 +28,8 @@ class FinReparacion(Evento):
         equipo_reparado = simulacion.cola_equipos.primero()
         equipo_reparado.horario_fin_reparacion = simulacion.hora_actual
 
+        simulacion.cola_equipos.modificar_primero(equipo_reparado)
+
         # debo acumular el tiempo que pasaron los equipos en el local desde que entraron hasta que salieron
         tiempo_transcurrido_en_local = equipo_reparado.horario_fin_reparacion - equipo_reparado.hora_ingreso_taller
 
