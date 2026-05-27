@@ -16,7 +16,7 @@ const FormularioVar = ({ onSimulacionCreada }) => {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      x_tiempo: 45,
+      x_tiempo: 2500,
       i_iteraciones: 1000,
       hora_inicio: "10:00",
       media_llegada: 45,
