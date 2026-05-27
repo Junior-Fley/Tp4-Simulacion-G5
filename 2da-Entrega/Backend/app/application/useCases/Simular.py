@@ -1,15 +1,15 @@
 import math
 import random
 from typing import List, Tuple, Any
-from app.domain.models.ColaFIFO import ColaFIFO
+from domain.models.Colas.ColaFIFO import ColaFIFO
 from app.domain.models.event.Evento import Evento
 from app.domain.models.Tecnico import Tecnico
 from app.domain.models.EstadoTecnico import EstadoTecnico
 from app.domain.models.event.LlegaCliente import LlegaCliente
 from app.application.ports.Simulacion_repository import ISimulacionRepository
 from app.infrastructure.database.unit_of_work.unit_of_work_impl import UowFactory
-from app.domain.models.ColaClientes import ColaClientes
-from app.domain.models.ColaEquipos import ColaEquipos
+from domain.models.Colas.ColaClientes import ColaClientes
+from domain.models.Colas.ColaEquipos import ColaEquipos
 from app.domain.services.truncar_service import truncar_a_decimales
 
 class Simular:
@@ -84,7 +84,7 @@ class Simular:
         return -media * (math.log(1 - rnd))
 
     @staticmethod
-    def uniforme(rnd: float, a: int, b: int) -> float:
+    def uniforme(rnd: float, a: float, b: float) -> float:
         return a + (b - a) * rnd
 
     @staticmethod
@@ -230,6 +230,7 @@ class Simular:
                 self.cola_clientes.serialize(),
                 self.cola_equipos.serialize()
             ))
+
     def ejecutar_simulacion(self) -> int:
         # creamos la nueva colección de simulaciones en la bdd
         with self.uow_factory() as uow:
