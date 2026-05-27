@@ -450,14 +450,14 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
                   <li key={equipo.id ?? `equipo-${idx}`}>
                     Equipo {equipo.id ?? idx + 1} - {equipo.estado ?? ""}
                     {equipo.hora_dejado
-                      ? ` - Dejado: ${formatoHoraAmPm(equipo.hora_dejado)}`
+                      ? ` - Hora dejado: ${formatoHoraAmPm(equipo.hora_dejado)}`
                       : ""}
                     {equipo.hora_fin
-                      ? ` - Fin: ${formatoHoraAmPm(equipo.hora_fin)}`
+                      ? ` - Hora Fin: ${formatoHoraAmPm(equipo.hora_fin)}`
                       : ""}
                     {(() => {
                       const t = formatoTiempoEquipo(equipo.tiempo);
-                      return t ? ` - Tiempo: ${t}` : "";
+                      return t ? ` - Tiempo: ${t} (hh:mm:ss)` : "";
                     })()}
                   </li>
                 ))}
