@@ -3,19 +3,23 @@ import { Button, Modal, Table } from "react-bootstrap";
 import simulacionService from "../service/simulacion.service";
 import "../App.css";
 
+const TAMANIO_PAGINA = 50;
 export const VectorEstado = ({ simId, onSimIdChange }) => {
 
+export const VectorEstado = () => {
+  const [filasBase, setFilasBase] = useState([]);
   const [filas, setFilas] = useState([]);
   const [simulaciones, setSimulaciones] = useState([]);
 
   const [page, setPage] = useState(1);
-  const [size, setSize] = useState(50);
   const [totalPages, setTotalPages] = useState(0);
   const [ultimaFila, setUltimaFila] = useState(null);
   const [stats, setStats] = useState(null);
   const [detalleFila, setDetalleFila] = useState(null);
   const [detalleAbierto, setDetalleAbierto] = useState(false);
 
+  const [filtroP, setFiltroP] = useState("");
+  const [filtroQ, setFiltroQ] = useState("");
   const simIdNormalizado = simId == null ? "" : String(simId);
   const simIdEnLista =
     !!simIdNormalizado &&
@@ -74,6 +78,23 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
   const normalizarEvento = (evento) =>
     typeof evento === "string" ? evento.trim().replace(/\s+/g, "_") : evento;
 
+  const horaASegundos = (valor) => {
+    if (valor === null || valor === undefined || valor === "") return null;
+
+    if (typeof valor === "string" && valor.includes(":")) {
+      const partes = valor.split(":");
+      const horas = Number(partes[0] ?? 0);
+      const minutos = Number(partes[1] ?? 0);
+      const segundos = Number(partes[2] ?? 0);
+      if ([horas, minutos, segundos].some((n) => Number.isNaN(n))) return null;
+      return horas * 3600 + minutos * 60 + segundos;
+    }
+
+    const num = Number(valor);
+    if (!Number.isFinite(num)) return null;
+    return Math.round(num * 60);
+  };
+
   const abrirDetalle = (fila) => {
     setDetalleFila(fila);
     setDetalleAbierto(true);
@@ -94,8 +115,10 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
           ? data
               .map((s) => {
                 if (s == null) return null;
-                if (typeof s === "number" || typeof s === "string") return { id: String(s) };
-                if (typeof s === "object" && s.id != null) return { id: String(s.id) };
+                if (typeof s === "number" || typeof s === "string")
+                  return { id: String(s) };
+                if (typeof s === "object" && s.id != null)
+                  return { id: String(s.id) };
                 return null;
               })
               .filter(Boolean)
@@ -135,46 +158,112 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
   useEffect(() => {
     const cargarFilas = async () => {
       try {
-        if (!simId) return;
-
-        const data = await simulacionService.obtenerListasFilas(
-          simId,
-          page,
-          size
-        );
-
-        setFilas(data.items);
-        setTotalPages(data.total_pages ?? 0);
-
-        // KPIs: tomar la última fila real de la simulación (última página)
-        const tp = Number(data.total_pages ?? 0);
-        if (!tp || !Array.isArray(data.items) || data.items.length === 0) {
+        if (!simId) {
+          setFilasBase([]);
+          setFilas([]);
           setUltimaFila(null);
+          setTotalPages(0);
           return;
         }
 
-        if (page === tp) {
-          setUltimaFila(data.items[data.items.length - 1] ?? null);
-          return;
-        }
-
-        const dataUltima = await simulacionService.obtenerListasFilas(
+        const primeraRespuesta = await simulacionService.obtenerListasFilas(
           simId,
-          tp,
-          size
+          1,
+          TAMANIO_PAGINA
         );
-        const itemsUltima = Array.isArray(dataUltima?.items)
-          ? dataUltima.items
-          : [];
-        setUltimaFila(itemsUltima[itemsUltima.length - 1] ?? null);
 
+        const totalPagesRespuesta = Number(primeraRespuesta?.total_pages ?? 0);
+        const itemsIniciales = Array.isArray(primeraRespuesta?.items)
+          ? primeraRespuesta.items
+          : [];
+
+        let acumuladas = [...itemsIniciales];
+
+        for (let pagina = 2; pagina <= totalPagesRespuesta; pagina += 1) {
+          const respuestaPagina = await simulacionService.obtenerListasFilas(
+            simId,
+            pagina,
+            TAMANIO_PAGINA
+          );
+
+          const itemsPagina = Array.isArray(respuestaPagina?.items)
+            ? respuestaPagina.items
+            : [];
+          acumuladas = acumuladas.concat(itemsPagina);
+        }
+
+        setFilasBase(acumuladas);
+        setUltimaFila(acumuladas[acumuladas.length - 1] ?? null);
+        setPage(1);
       } catch (error) {
         console.error("Error al obtener filas:", error);
+        setFilasBase([]);
+        setFilas([]);
+        setUltimaFila(null);
+        setTotalPages(0);
       }
     };
 
     cargarFilas();
-  }, [simId, page, size]);
+  }, [simId]);
+
+  useEffect(() => {
+    const sinFiltros = filtroP === "" && filtroQ === "";
+
+    if (!Array.isArray(filasBase)) {
+      setFilas([]);
+      setTotalPages(0);
+      return;
+    }
+
+    if (sinFiltros) {
+      const inicio = (page - 1) * TAMANIO_PAGINA;
+      const fin = inicio + TAMANIO_PAGINA;
+      setFilas(filasBase.slice(inicio, fin));
+      setTotalPages(
+        filasBase.length > 0 ? Math.ceil(filasBase.length / TAMANIO_PAGINA) : 0
+      );
+      return;
+    }
+
+    let inicio = 0;
+
+    if (filtroQ !== "") {
+      const horaObjetivo = horaASegundos(filtroQ);
+
+      if (horaObjetivo === null) {
+        setFilas([]);
+        setTotalPages(0);
+        return;
+      }
+
+      inicio = filasBase.findIndex((fila) => {
+        const horaFila = horaASegundos(fila.hora);
+        return horaFila !== null && horaFila >= horaObjetivo;
+      });
+
+      if (inicio === -1) {
+        setFilas([]);
+        setTotalPages(0);
+        return;
+      }
+    }
+
+    const cantidad =
+      filtroP === "" ? filasBase.length - inicio : Math.max(1, Number(filtroP));
+
+    const visibles = filasBase.slice(inicio, inicio + cantidad);
+
+    const ultimaVisible = visibles[visibles.length - 1];
+    const ultimaGeneral = filasBase[filasBase.length - 1];
+
+    if (ultimaGeneral && ultimaVisible !== ultimaGeneral) {
+      visibles.push(ultimaGeneral);
+    }
+
+    setFilas(visibles);
+    setTotalPages(1);
+  }, [filasBase, page, filtroP, filtroQ]);
 
   useEffect(() => {
     const cargarStats = async () => {
@@ -195,6 +284,8 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
     cargarStats();
   }, [simId]);
 
+  const vistaFiltrada = filtroP !== "" || filtroQ !== "";
+
   return (
     <div className="tabla-page">
 
@@ -213,6 +304,8 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
             }
             localStorage.setItem("simId", id);
             setPage(1);
+            setFiltroP("");
+            setFiltroQ("");
           }}
         >
           <option value="">Seleccionar simulación...</option>
@@ -278,7 +371,6 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
               </h3>
             </div>
           </div>
-
         </div>
       </div>
 
@@ -318,6 +410,13 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
             <tbody>
               {filas.map((fila, index) => (
                 <React.Fragment key={index}>
+                  {index === filas.length - 1 && filas.length > 0 && (
+                    <tr className="table-secondary">
+                      <td colSpan={21} className="text-center fw-bold">
+                        Última fila de la simulación
+                      </td>
+                    </tr>
+                  )}
 
                   {normalizarEvento(fila.evento) === "Abre_Tienda" && (
                     <tr className="table-primary">
@@ -373,50 +472,88 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
                 </React.Fragment>
               ))}
             </tbody>
-
           </Table>
-
         </div>
-
       </div>
 
       {/* PAGINACIÓN */}
-      <div className="tabla-pagination">
+      <div className="tabla-pagination d-flex flex-column align-items-stretch gap-3">
+        <div className="d-flex flex-wrap align-items-end justify-content-center gap-3">
+          <div className="d-flex flex-column">
+            <label className="form-label mb-1 fw-semibold">
+              Cantidad de Iteraciones:
+            </label>
+            <input
+              type="number"
+              min="1"
+              className="form-control tabla-size"
+              placeholder=""
+              value={filtroP}
+              onChange={(e) => {
+                setFiltroP(e.target.value);
+                setPage(1);
+              }}
+            />
+          </div>
 
-        <button
-          className="btn btn-secondary"
-          onClick={() => setPage(page - 1)}
-          disabled={page === 1}
-        >
-          Anterior
-        </button>
+          <div className="d-flex flex-column">
+            <label className="form-label mb-1 fw-semibold">
+              Hora de inicio:
+            </label>
+            <input
+              type="time"
+              step="1"
+              className="form-control tabla-size"
+              style={{ width: "600px" }}
+              value={filtroQ}
+              onChange={(e) => {
+                setFiltroQ(e.target.value);
+                setPage(1);
+              }}
+            />
+          </div>
 
-        <span>
-          Página {page} {totalPages > 0 ? `de ${totalPages}` : ""}
-        </span>
+          <button
+            className="btn btn-outline-secondary"
+            onClick={() => {
+              setFiltroP("");
+              setFiltroQ("");
+              setPage(1);
+            }}
+          >
+            Limpiar
+          </button>
+        </div>
 
-        <button
-          className="btn btn-secondary"
-          onClick={() => setPage(page + 1)}
-          disabled={totalPages > 0 && page >= totalPages}
-        >
-          Siguiente
-        </button>
+        <div className="d-flex align-items-center justify-content-center gap-3">
+          <button
+            className="btn btn-secondary"
+            onClick={() => setPage(page - 1)}
+            disabled={page === 1 || vistaFiltrada}
+          >
+            Anterior
+          </button>
 
-        <select
-          className="form-select tabla-size"
-          value={size}
-          onChange={(e) => {
-            setSize(Number(e.target.value));
-            setPage(1);
-          }}
-        >
-          <option value={10}>10</option>
-          <option value={50}>50</option>
-        </select>
+          <span>
+            {vistaFiltrada ? (
+              "Vista filtrada"
+            ) : (
+              <>
+                Página {page} {totalPages > 0 ? `de ${totalPages}` : ""}
+              </>
+            )}
+          </span>
 
+          <button
+            className="btn btn-secondary"
+            onClick={() => setPage(page + 1)}
+            disabled={(totalPages > 0 && page >= totalPages) || vistaFiltrada}
+          >
+            Siguiente
+          </button>
+        </div>
       </div>
-
+      
       {/* DETALLE */}
       <Modal
         show={detalleAbierto}
@@ -442,6 +579,7 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
               <span>Sin clientes</span>
             )}
           </div>
+
           <div>
             <h6>Equipos</h6>
             {detalleFila?.equipos?.length ? (
