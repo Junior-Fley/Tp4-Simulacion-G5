@@ -4,15 +4,12 @@ import simulacionService from "../service/simulacion.service";
 import "../App.css";
 
 const TAMANIO_PAGINA = 50;
+export const VectorEstado = ({ simId, onSimIdChange }) => {
 
 export const VectorEstado = () => {
   const [filasBase, setFilasBase] = useState([]);
   const [filas, setFilas] = useState([]);
   const [simulaciones, setSimulaciones] = useState([]);
-
-  const [simId, setSimId] = useState(
-    localStorage.getItem("simId")
-  );
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
@@ -23,6 +20,10 @@ export const VectorEstado = () => {
 
   const [filtroP, setFiltroP] = useState("");
   const [filtroQ, setFiltroQ] = useState("");
+  const simIdNormalizado = simId == null ? "" : String(simId);
+  const simIdEnLista =
+    !!simIdNormalizado &&
+    simulaciones.some((s) => String(s?.id) === simIdNormalizado);
 
   const mostrarValorVacioNAda = (valor) => {
     if (valor === -1 || valor === null || valor === undefined || valor === "") {
@@ -123,7 +124,12 @@ export const VectorEstado = () => {
               .filter(Boolean)
           : [];
 
-        setSimulaciones(normalizadas);
+        setSimulaciones(() => {
+          const currentId = simId ? String(simId) : "";
+          if (!currentId) return normalizadas;
+          if (normalizadas.some((s) => String(s?.id) === currentId)) return normalizadas;
+          return [{ id: currentId }, ...normalizadas];
+        });
       } catch (error) {
         console.error("Error al listar simulaciones:", error);
 
@@ -131,18 +137,23 @@ export const VectorEstado = () => {
         const simsLocal = JSON.parse(
           localStorage.getItem("simulaciones") || "[]"
         );
-        setSimulaciones(
-          Array.isArray(simsLocal)
-            ? simsLocal
-                .map((s) => (s?.id != null ? { id: String(s.id) } : null))
-                .filter(Boolean)
-            : []
-        );
+        const fromLocal = Array.isArray(simsLocal)
+          ? simsLocal
+              .map((s) => (s?.id != null ? { id: String(s.id) } : null))
+              .filter(Boolean)
+          : [];
+
+        setSimulaciones(() => {
+          const currentId = simId ? String(simId) : "";
+          if (!currentId) return fromLocal;
+          if (fromLocal.some((s) => String(s?.id) === currentId)) return fromLocal;
+          return [{ id: currentId }, ...fromLocal];
+        });
       }
     };
 
     cargarSimulaciones();
-  }, []);
+  }, [simId]);
 
   useEffect(() => {
     const cargarFilas = async () => {
@@ -288,7 +299,9 @@ export const VectorEstado = () => {
           value={simId || ""}
           onChange={(e) => {
             const id = e.target.value;
-            setSimId(id);
+            if (typeof onSimIdChange === "function") {
+              onSimIdChange(id);
+            }
             localStorage.setItem("simId", id);
             setPage(1);
             setFiltroP("");
@@ -296,6 +309,12 @@ export const VectorEstado = () => {
           }}
         >
           <option value="">Seleccionar simulación...</option>
+
+          {simIdNormalizado && !simIdEnLista && (
+            <option value={simIdNormalizado}>
+              Simulación #{simIdNormalizado}
+            </option>
+          )}
 
           {simulaciones.map((sim, index) => (
             <option key={`${sim.id}-${index}`} value={sim.id}>
@@ -569,14 +588,14 @@ export const VectorEstado = () => {
                   <li key={equipo.id ?? `equipo-${idx}`}>
                     Equipo {equipo.id ?? idx + 1} - {equipo.estado ?? ""}
                     {equipo.hora_dejado
-                      ? ` - Dejado: ${formatoHoraAmPm(equipo.hora_dejado)}`
+                      ? ` - Hora dejado: ${formatoHoraAmPm(equipo.hora_dejado)}`
                       : ""}
                     {equipo.hora_fin
-                      ? ` - Fin: ${formatoHoraAmPm(equipo.hora_fin)}`
+                      ? ` - Hora Fin: ${formatoHoraAmPm(equipo.hora_fin)}`
                       : ""}
                     {(() => {
                       const t = formatoTiempoEquipo(equipo.tiempo);
-                      return t ? ` - Tiempo: ${t}` : "";
+                      return t ? ` - Tiempo: ${t} (hh:mm:ss)` : "";
                     })()}
                   </li>
                 ))}

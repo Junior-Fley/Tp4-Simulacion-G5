@@ -6,4 +6,5 @@ class EstadoEquipo(Enum):
     EN_COLA_REPARACION = "en_cola_reparacion"
     EN_REPARACION = "en_reparacion"
     REPARACION_INTERRUPIDA = "reparacion_interrumpida"
+    REPARADO = "reparado"
 

@@ -6,7 +6,7 @@ from app.domain.models.EstadoTecnico import EstadoTecnico
 from app.domain.models.event.Evento import Evento
 from typing import TYPE_CHECKING
 
-
+from domain.models.EstadoEquipo import EstadoEquipo
 
 if TYPE_CHECKING:
     from app.application.useCases.Simular import Simular
@@ -16,17 +16,32 @@ class FinReparacion(Evento):
             super().__init__("Fin_Reparación")
 
     def ejecutar_accion(self, simulacion: Simular):
-
         # Actualizo la hora actual con el tiempo restante de reparacion del equipo
         # que está primero en la cola de equipos
-        simulacion.hora_actual += simulacion.cola_equipos.primero().tiempo_reparacion_restante
+        equipo_reparado = simulacion.cola_equipos.primero()
+        simulacion.hora_actual += equipo_reparado.tiempo_reparacion_restante
 
         # Aumentamos el acumulador del tecnico
-        simulacion.tecnico.acum_reparacion += simulacion.cola_equipos.primero().tiempo_reparacion_restante
+        simulacion.tecnico.acum_reparacion += equipo_reparado.tiempo_reparacion_restante
 
-        # antes de retirar de la cola al equipo, debería asignarle su valor de tiempo fin
-        equipo_reparado = simulacion.cola_equipos.primero()
+        # antes de retirar de la cola al equipo, debería asignarle su valor de tiempo fin y su estado reparado
         equipo_reparado.horario_fin_reparacion = simulacion.hora_actual
+        equipo_reparado.estado = EstadoEquipo.REPARADO.value
+
+        # guardo en la cola los cambios realizados al primer equipo
+        simulacion.cola_equipos.modificar_primero(equipo_reparado)
+
+        # debo mostrar estos cambios que le hice al primer equipo de la cola en el serialize siguiente, pero no en el
+        # 2do siguiente, entonces, uso el marcar_dirty_2do
+
+        # marco dirty normal para guardar los cambios actuales
+        simulacion.cola_equipos.marcar_dirty()
+        # serialize para que se guarden los cambios al caché
+        simulacion.cola_equipos.serialize()
+        # uso este méthod para asegurarme que el siguiente serialize no reescriba la caché, pero el que le siga
+        # a ese, si la reescriba
+        simulacion.cola_equipos.marcar_dirty_segunda()
+
 
         # debo acumular el tiempo que pasaron los equipos en el local desde que entraron hasta que salieron
         tiempo_transcurrido_en_local = equipo_reparado.horario_fin_reparacion - equipo_reparado.hora_ingreso_taller
@@ -37,7 +52,7 @@ class FinReparacion(Evento):
 
         # Retiro el equipo que se acaba de reparar de la cola de equipos
         # si retiro un equipo de la cola, el caché se vuelve dirty
-        simulacion.cola_equipos.marcar_dirty()
+        # todo ya no necesito marcar dirty acá, se marcó dirty 2da arriba
         simulacion.cola_equipos.retirar()
 
         # Ahora queda calcular cuál es el próximo evento a ejecutar
@@ -57,6 +72,31 @@ class FinReparacion(Evento):
                 simulacion.cola_equipos.modificar_primero(primer_equipo)
                 # no necesito revisar si es que me interrumpen o no, tengo la certeza de que no me van a interrumpir
                 simulacion.proximo_evento = FinReparacion()
+
+
+                # acá pasa algo chistoso, claro, yo le acabo de calcular el tiempo de reparación al que ahora
+                # es el primer equipo de la fila, así que necesito reflejar eso en el caché, pero también es verdad
+                # que llegado este punto ya retiré el que antes era el primer equipo de la cola, y también necesito
+                # reflejar sus cambios...
+
+                # como soluciono esto... vuelvo a añadir el que era el primer equipo a la cola, en la primera
+                # posición y vuelvo a re-serializarlo
+
+                simulacion.cola_equipos.agregar_primero(equipo_reparado)
+
+                # para este punto en la cola ya está el equipo reparado con sus cambios reflejados
+                # y también el que empecé a reparar con sus cambios reflejados en la 2da posición
+
+                # guardo estos cambios en el caché
+                simulacion.cola_equipos.marcar_dirty()
+                simulacion.cola_equipos.serialize()
+
+                # marco dirty segunda para que el 2do serialize ya no esté muestre más el equipo reparado
+                simulacion.cola_equipos.marcar_dirty_segunda()
+
+                # vuelvo a retirar el primer equipo de la cola para que no cause desgracias
+                simulacion.cola_equipos.retirar()
+
             # si no hay equipos en la cola para ser reparados y la tienda está cerrada, entonces quedo libre
             # y el próximo evento debe ser la apertura de la tienda el día siguiente a las 10 AM
             else:
@@ -102,7 +142,8 @@ class FinReparacion(Evento):
                     # actualizo estado
                     simulacion.tecnico.estado = EstadoTecnico.REPARANDO
 
-                    # calculo el tiempo de reparación del primer dispositivo de la cola
+                    # cálculo el tiempo de reparación del primer dispositivo de la cola
+                        # esta función también se encarga de actualizar el estado y los tiempos y reflejar esos cambios en la cola
                     primer_equipo: Equipo = self.calcular_tiempo_hasta_reparacion(simulacion)
 
                     # calculo a que hora terminaría de reparar el equipo si no me interrumpen
@@ -110,6 +151,32 @@ class FinReparacion(Evento):
 
 
                     if hora_fin_reparacion < simulacion.hora_proxima_llegada:
+                        # ---------------------------------------------
+                        # acá pasa algo chistoso, claro, yo le acabo de calcular el tiempo de reparación al que ahora
+                        # es el primer equipo de la fila, así que necesito reflejar eso en el caché, pero también es verdad
+                        # que llegado este punto ya retiré el que antes era el primer equipo de la cola, y también necesito
+                        # reflejar sus cambios...
+                        # -----------------------------------------------
+                        # como soluciono esto... vuelvo a añadir el que era el primer equipo a la cola, en la primera
+                        # posición y vuelvo a re-serializarlo
+
+                        simulacion.cola_equipos.agregar_primero(equipo_reparado)
+
+                        # para este punto en la cola ya está el equipo reparado con sus cambios reflejados
+                        # y también el que empecé a reparar con sus cambios reflejados en la 2da posición
+
+                        # guardo estos cambios en el caché
+                        simulacion.cola_equipos.marcar_dirty()
+                        simulacion.cola_equipos.serialize()
+
+                        # marco dirty segunda para que el 2do serialize ya no esté muestre más el equipo reparado
+                        simulacion.cola_equipos.marcar_dirty_segunda()
+
+                        # vuelvo a retirar el primer equipo de la cola para que no cause desgracias
+                        simulacion.cola_equipos.retirar()
+
+
+
                         simulacion.proximo_evento = FinReparacion()
                     else:
                         from app.domain.models.event.LlegaCliente import LlegaCliente
@@ -121,6 +188,30 @@ class FinReparacion(Evento):
                         primer_equipo.tiempo_reparacion_restante -= tiempo_transcurrido_reparando
 
                         simulacion.cola_equipos.modificar_primero(primer_equipo)
+
+                        # ---------------------------------------------
+                        # acá pasa algo chistoso, claro, yo le acabo de calcular el tiempo de reparación al que ahora
+                        # es el primer equipo de la fila, así que necesito reflejar eso en el caché, pero también es verdad
+                        # que llegado este punto ya retiré el que antes era el primer equipo de la cola, y también necesito
+                        # reflejar sus cambios...
+                        # -----------------------------------------------
+                        # como soluciono esto... vuelvo a añadir el que era el primer equipo a la cola, en la primera
+                        # posición y vuelvo a re-serializarlo
+
+                        simulacion.cola_equipos.agregar_primero(equipo_reparado)
+
+                        # para este punto en la cola ya está el equipo reparado con sus cambios reflejados
+                        # y también el que empecé a reparar con sus cambios reflejados en la 2da posición
+
+                        # guardo estos cambios en el caché
+                        simulacion.cola_equipos.marcar_dirty()
+                        simulacion.cola_equipos.serialize()
+
+                        # marco dirty segunda para que el 2do serialize ya no esté muestre más el equipo reparado
+                        simulacion.cola_equipos.marcar_dirty_segunda()
+
+                        # vuelvo a retirar el primer equipo de la cola para que no cause desgracias
+                        simulacion.cola_equipos.retirar()
 
                         simulacion.proximo_evento = LlegaCliente()
 

@@ -30,7 +30,16 @@ class SimulacionCreatedResponse(BaseModel):
 def iniciar_simulacion(payload: SimularRequest):
     # Crear repo por simulación
 
-    simulador = Simular(uow_factory, x_tiempo=payload.x_tiempo, i_iteraciones=payload.i_iteraciones, j_hora_inicio=payload.j_hora_inicio)
+    simulador = Simular(
+        uow_factory,
+        x_tiempo=payload.x_tiempo,
+        i_iteraciones=payload.i_iteraciones,
+        j_hora_inicio=payload.j_hora_inicio,
+        media_llegada=payload.media_llegada,
+        min_atencion=payload.min_atencion,
+        max_atencion=payload.max_atencion,
+        media_reparacion=payload.media_reparacion
+    )
 
     # Nota: esto ejecuta síncrono la simulación. Si tarda, la petición bloqueará hasta terminar.
     #coleccion_id = simulador.ejecutar_simulacion()

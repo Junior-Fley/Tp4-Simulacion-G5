@@ -1,19 +1,20 @@
 import math
 import random
 from typing import List, Tuple, Any
-from app.domain.models.ColaFIFO import ColaFIFO
+from domain.models.Colas.ColaFIFO import ColaFIFO
 from app.domain.models.event.Evento import Evento
 from app.domain.models.Tecnico import Tecnico
 from app.domain.models.EstadoTecnico import EstadoTecnico
 from app.domain.models.event.LlegaCliente import LlegaCliente
 from app.application.ports.Simulacion_repository import ISimulacionRepository
 from app.infrastructure.database.unit_of_work.unit_of_work_impl import UowFactory
-from app.domain.models.ColaClientes import ColaClientes
-from app.domain.models.ColaEquipos import ColaEquipos
+from domain.models.Colas.ColaClientes import ColaClientes
+from domain.models.Colas.ColaEquipos import ColaEquipos
 from app.domain.services.truncar_service import truncar_a_decimales
 
 class Simular:
     def __init__(self, uow_factory: UowFactory, x_tiempo: float, i_iteraciones: int, j_hora_inicio: float = 600,
+                 media_llegada: float = 45, min_atencion: float = 10, max_atencion: float = 20, media_reparacion: float = 90,
                  repo_override: ISimulacionRepository|None = None, batch_size: int = 10_000): #600 == 10:00 AM
 
 
@@ -31,10 +32,10 @@ class Simular:
         self.i_iteraciones: int = i_iteraciones
         self.j_hora_inicio: float = j_hora_inicio
 
-        self.media_llegada: float = 45 # representa el tiempo de media en minutos entre llegadas de clientes
-        self.min_atencion: int = 10 # representa el tiempo mínimo en minutos para atender un cliente
-        self.max_atencion: int = 20 # representa el tiempo máximo en minutos para atender un cliente
-        self.media_reparacion: float = 90 # representa el tiempo de media en minutos para reparar un equipo
+        self.media_llegada: float = media_llegada # representa el tiempo de media en minutos entre llegadas de clientes
+        self.min_atencion: float = min_atencion # representa el tiempo mínimo en minutos para atender un cliente
+        self.max_atencion: float = max_atencion # representa el tiempo máximo en minutos para atender un cliente
+        self.media_reparacion: float = media_reparacion # representa el tiempo de media en minutos para reparar un equipo
 
         self.clientes_no_atendidos: int = 0
         self.presupuesto: str = ''
@@ -83,7 +84,7 @@ class Simular:
         return -media * (math.log(1 - rnd))
 
     @staticmethod
-    def uniforme(rnd: float, a: int, b: int) -> float:
+    def uniforme(rnd: float, a: float, b: float) -> float:
         return a + (b - a) * rnd
 
     @staticmethod
@@ -229,6 +230,7 @@ class Simular:
                 self.cola_clientes.serialize(),
                 self.cola_equipos.serialize()
             ))
+
     def ejecutar_simulacion(self) -> int:
         # creamos la nueva colección de simulaciones en la bdd
         with self.uow_factory() as uow:
@@ -278,38 +280,43 @@ class Simular:
         self.evento = LlegaCliente()
 
         for i in range(self.i_iteraciones):
-            # region guardado en bulk de filas
-            # si mi cantidad de filas en mi vector de filas a guardar es mayor o igual al tamaño definido para commit
-            # a la bdd, entonces guardo las filas y limpio el vector de filas a guardar.
-            if len(self.filas_a_guardar) >= self.batch_size:
-                with self.uow_factory() as uow:
-                    if self.repo_override is not None:
-                        uow.simu_repo = self.repo_override
-                    uow.simu_repo.guardar_filas_bulk(self.filas_a_guardar)
 
-                self.filas_a_guardar = []
+            #Hay que cortar el bucle si se llegó a la hora de cierre x_tiempo
+            if self.hora_actual < self.x_tiempo:
+                # region guardado en bulk de filas
+                # si mi cantidad de filas en mi vector de filas a guardar es mayor o igual al tamaño definido para commit
+                # a la bdd, entonces guardo las filas y limpio el vector de filas a guardar.
+                if len(self.filas_a_guardar) >= self.batch_size:
+                    with self.uow_factory() as uow:
+                        if self.repo_override is not None:
+                            uow.simu_repo = self.repo_override
+                        uow.simu_repo.guardar_filas_bulk(self.filas_a_guardar)
+
+                    self.filas_a_guardar = []
 
 
-            #endregion guardado en bulk de filas
+                #endregion guardado en bulk de filas
 
-            # ejecutar la accion correspondiente al evento actual, esto debería ser autosuficiente y encargarse
-            # de gestionar las transiciones a otros eventos mientras la tienda este abierta y también cuando cierre o
-            # vaya a reabrir
-            self.evento.ejecutar_accion(self)
+                # ejecutar la accion correspondiente al evento actual, esto debería ser autosuficiente y encargarse
+                # de gestionar las transiciones a otros eventos mientras la tienda este abierta y también cuando cierre o
+                # vaya a reabrir
+                self.evento.ejecutar_accion(self)
 
-            # definir que datos corresponden guardar en esta fila y guardarlos en el vector de filas
-            # para después guardar en BDD
-            match self.evento.nombre:
-                case "Llega_Cliente":
-                    self.guardar_fila_llega_cliente()
-                case "Fin_Atención":
-                    self.guardar_fila_atencion()
-                case "Fin_Reparación":
-                    self.guardar_fila_reparacion()
-                case "Abre_Tienda":
-                    self.guarda_fila_abre_tienda()
+                # definir que datos corresponden guardar en esta fila y guardarlos en el vector de filas
+                # para después guardar en BDD
+                match self.evento.nombre:
+                    case "Llega_Cliente":
+                        self.guardar_fila_llega_cliente()
+                    case "Fin_Atención":
+                        self.guardar_fila_atencion()
+                    case "Fin_Reparación":
+                        self.guardar_fila_reparacion()
+                    case "Abre_Tienda":
+                        self.guarda_fila_abre_tienda()
 
-            self.evento = self.proximo_evento
+                self.evento = self.proximo_evento
+
+
 
         # si ya terminó la ejecución de la simulación, pero aún tengo filas en mi vector de filas a guardar, entonces guardo las filas restantes en la bdd
 

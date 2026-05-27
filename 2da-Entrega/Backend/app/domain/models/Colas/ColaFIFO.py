@@ -17,6 +17,13 @@ class ColaFIFO(ABC):
     def agregar(self, elemento):
         self.elementos.append(elemento)
 
+    def agregar_primero(self, elemento):
+        """Inserta `elemento` al frente de la cola (como primer elemento).
+
+        Usa deque.appendleft para que el elemento quede en la posición 0.
+        """
+        self.elementos.appendleft(elemento)
+
     def retirar(self):
         if self.esta_vacia():
             return None
@@ -52,4 +59,8 @@ class ColaFIFO(ABC):
 
     @abstractmethod
     def marcar_dirty(self):
+        pass
+
+    @abstractmethod
+    def marcar_dirty_segunda(self):
         pass
