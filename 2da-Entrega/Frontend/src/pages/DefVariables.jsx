@@ -4,7 +4,7 @@ import "../App.css";
 
 import simulacionService from "../service/simulacion.service";
 
-const FormularioVar = () => {
+const FormularioVar = ({ onSimulacionCreada }) => {
   const [mensaje, setMensaje] = useState("");
   const [tipoMensaje, setTipoMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
@@ -19,6 +19,10 @@ const FormularioVar = () => {
       x_tiempo: 45,
       i_iteraciones: 1000,
       hora_inicio: "10:00",
+      media_llegada: 45,
+      min_atencion: 10,
+      max_atencion: 20,
+      media_reparacion: 90,
     },
   });
 
@@ -33,14 +37,20 @@ const FormularioVar = () => {
       Number(minutos);
 
     const parsed = {
-
       x_tiempo: Number(data.x_tiempo),
-
       i_iteraciones: Number(data.i_iteraciones),
-
       j_hora_inicio: totalMinutos,
-
+      media_llegada: Number(data.media_llegada),
+      min_atencion: Number(data.min_atencion),
+      max_atencion: Number(data.max_atencion),
+      media_reparacion: Number(data.media_reparacion),
     };
+
+    if (parsed.min_atencion > parsed.max_atencion) {
+      setMensaje("El mínimo de atención no puede ser mayor que el máximo");
+      setTipoMensaje("danger");
+      return;
+    }
 
     console.log(parsed);
 
@@ -48,23 +58,25 @@ const FormularioVar = () => {
 
   setCargando(true);
 
-  const response =
-    await simulacionService.iniciarSimulacion(parsed);
+  const response = await simulacionService.iniciarSimulacion(parsed);
 
   console.log("ver: ", response);
 
+  const nuevoId = response?.id_simulacion;
+
   // guardar id
-  localStorage.setItem(
-    "simId",
-    response.id_simulacion
-  );
+  if (nuevoId != null) {
+    localStorage.setItem("simId", String(nuevoId));
+  }
 
   setMensaje("Simulación generada correctamente");
 
   setTipoMensaje("success");
 
-  // refrescar pantalla automáticamente
-  window.location.reload();
+  // Notificar al resto de la UI para que cargue la tabla de esta simulación
+  if (typeof onSimulacionCreada === "function" && nuevoId != null) {
+    onSimulacionCreada(nuevoId);
+  }
 
 } catch (error) {
 
@@ -170,6 +182,74 @@ const FormularioVar = () => {
           "time",
           {},
           "bi-hourglass-split"
+        )}
+
+        {campo(
+          "Media entre llegadas (min)",
+          "media_llegada",
+          "number",
+          {
+            min: { value: 0.000001, message: "Debe ser mayor a 0" },
+          },
+          "bi-people"
+        )}
+
+        {/* Distribución uniforme: atención */}
+        <div className="mb-3">
+          <label className="form-label">
+            <i className="bi bi-stopwatch me-1"></i>
+            Distribución uniforme de atención (min)
+          </label>
+
+          <div className="row g-2">
+            <div className="col-6">
+              <input
+                type="number"
+                step="any"
+                placeholder="Mín"
+                className={`form-control ${errors.min_atencion ? "is-invalid" : ""}`}
+                {...register("min_atencion", {
+                  required: "Campo obligatorio",
+                  min: { value: 0.000001, message: "Debe ser mayor a 0" },
+                })}
+              />
+
+              {errors.min_atencion && (
+                <span className="invalid-feedback">
+                  {errors.min_atencion.message}
+                </span>
+              )}
+            </div>
+
+            <div className="col-6">
+              <input
+                type="number"
+                step="any"
+                placeholder="Máx"
+                className={`form-control ${errors.max_atencion ? "is-invalid" : ""}`}
+                {...register("max_atencion", {
+                  required: "Campo obligatorio",
+                  min: { value: 0.000001, message: "Debe ser mayor a 0" },
+                })}
+              />
+
+              {errors.max_atencion && (
+                <span className="invalid-feedback">
+                  {errors.max_atencion.message}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {campo(
+          "Media reparación (min)",
+          "media_reparacion",
+          "number",
+          {
+            min: { value: 0.000001, message: "Debe ser mayor a 0" },
+          },
+          "bi-wrench-adjustable"
         )}
 
       </div>

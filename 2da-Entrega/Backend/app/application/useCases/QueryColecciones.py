@@ -8,4 +8,3 @@ class QueryColecciones:
     def listar_ids(self) -> list[int]:
         with self.uow_factory() as uow:
             return uow.colec_repo.listar_ids()
-

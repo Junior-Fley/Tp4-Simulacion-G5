@@ -3,14 +3,10 @@ import { Button, Modal, Table } from "react-bootstrap";
 import simulacionService from "../service/simulacion.service";
 import "../App.css";
 
-export const VectorEstado = () => {
+export const VectorEstado = ({ simId, onSimIdChange }) => {
 
   const [filas, setFilas] = useState([]);
   const [simulaciones, setSimulaciones] = useState([]);
-
-  const [simId, setSimId] = useState(
-    localStorage.getItem("simId")
-  );
 
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(50);
@@ -19,6 +15,11 @@ export const VectorEstado = () => {
   const [stats, setStats] = useState(null);
   const [detalleFila, setDetalleFila] = useState(null);
   const [detalleAbierto, setDetalleAbierto] = useState(false);
+
+  const simIdNormalizado = simId == null ? "" : String(simId);
+  const simIdEnLista =
+    !!simIdNormalizado &&
+    simulaciones.some((s) => String(s?.id) === simIdNormalizado);
 
   const mostrarValorVacioNAda = (valor) => {
     if (valor === -1 || valor === null || valor === undefined || valor === "") {
@@ -100,7 +101,12 @@ export const VectorEstado = () => {
               .filter(Boolean)
           : [];
 
-        setSimulaciones(normalizadas);
+        setSimulaciones(() => {
+          const currentId = simId ? String(simId) : "";
+          if (!currentId) return normalizadas;
+          if (normalizadas.some((s) => String(s?.id) === currentId)) return normalizadas;
+          return [{ id: currentId }, ...normalizadas];
+        });
       } catch (error) {
         console.error("Error al listar simulaciones:", error);
 
@@ -108,18 +114,23 @@ export const VectorEstado = () => {
         const simsLocal = JSON.parse(
           localStorage.getItem("simulaciones") || "[]"
         );
-        setSimulaciones(
-          Array.isArray(simsLocal)
-            ? simsLocal
-                .map((s) => (s?.id != null ? { id: String(s.id) } : null))
-                .filter(Boolean)
-            : []
-        );
+        const fromLocal = Array.isArray(simsLocal)
+          ? simsLocal
+              .map((s) => (s?.id != null ? { id: String(s.id) } : null))
+              .filter(Boolean)
+          : [];
+
+        setSimulaciones(() => {
+          const currentId = simId ? String(simId) : "";
+          if (!currentId) return fromLocal;
+          if (fromLocal.some((s) => String(s?.id) === currentId)) return fromLocal;
+          return [{ id: currentId }, ...fromLocal];
+        });
       }
     };
 
     cargarSimulaciones();
-  }, []);
+  }, [simId]);
 
   useEffect(() => {
     const cargarFilas = async () => {
@@ -197,12 +208,20 @@ export const VectorEstado = () => {
           value={simId || ""}
           onChange={(e) => {
             const id = e.target.value;
-            setSimId(id);
+            if (typeof onSimIdChange === "function") {
+              onSimIdChange(id);
+            }
             localStorage.setItem("simId", id);
             setPage(1);
           }}
         >
           <option value="">Seleccionar simulación...</option>
+
+          {simIdNormalizado && !simIdEnLista && (
+            <option value={simIdNormalizado}>
+              Simulación #{simIdNormalizado}
+            </option>
+          )}
 
           {simulaciones.map((sim, index) => (
             <option key={`${sim.id}-${index}`} value={sim.id}>

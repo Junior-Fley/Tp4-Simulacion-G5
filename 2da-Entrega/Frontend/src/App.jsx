@@ -1,20 +1,37 @@
 
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-
-import Encabezado from "./components/Encabezado";
+import { useState } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import PiePagina from "./components/PiePagina";
 
 import DefVariables from "./pages/DefVariables";
 import { VectorEstado } from "./pages/VectorEstado";
 
 function App() {
+  const [simId, setSimId] = useState(() => localStorage.getItem("simId") || "");
+
   return (
     <BrowserRouter>
-      {/* <Encabezado /> */}
       <Routes>
-        <Route path="/" element={<DefVariables />} />
+        <Route
+          path="/"
+          element={
+            <DefVariables
+              onSimulacionCreada={(nuevoId) => {
+                const id = nuevoId == null ? "" : String(nuevoId);
+                setSimId(id);
+              }}
+            />
+          }
+        />
       </Routes>
-      <VectorEstado />
+      <VectorEstado
+        key={simId || "__sin_sim__"}
+        simId={simId}
+        onSimIdChange={(nuevoId) => {
+          const id = nuevoId == null ? "" : String(nuevoId);
+          setSimId(id);
+        }}
+      />
       <PiePagina />
       
     </BrowserRouter>

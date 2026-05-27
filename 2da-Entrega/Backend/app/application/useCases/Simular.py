@@ -14,6 +14,7 @@ from app.domain.services.truncar_service import truncar_a_decimales
 
 class Simular:
     def __init__(self, uow_factory: UowFactory, x_tiempo: float, i_iteraciones: int, j_hora_inicio: float = 600,
+                 media_llegada: float = 45, min_atencion: float = 10, max_atencion: float = 20, media_reparacion: float = 90,
                  repo_override: ISimulacionRepository|None = None, batch_size: int = 10_000): #600 == 10:00 AM
 
 
@@ -31,10 +32,10 @@ class Simular:
         self.i_iteraciones: int = i_iteraciones
         self.j_hora_inicio: float = j_hora_inicio
 
-        self.media_llegada: float = 45 # representa el tiempo de media en minutos entre llegadas de clientes
-        self.min_atencion: int = 10 # representa el tiempo mínimo en minutos para atender un cliente
-        self.max_atencion: int = 20 # representa el tiempo máximo en minutos para atender un cliente
-        self.media_reparacion: float = 90 # representa el tiempo de media en minutos para reparar un equipo
+        self.media_llegada: float = media_llegada # representa el tiempo de media en minutos entre llegadas de clientes
+        self.min_atencion: float = min_atencion # representa el tiempo mínimo en minutos para atender un cliente
+        self.max_atencion: float = max_atencion # representa el tiempo máximo en minutos para atender un cliente
+        self.media_reparacion: float = media_reparacion # representa el tiempo de media en minutos para reparar un equipo
 
         self.clientes_no_atendidos: int = 0
         self.presupuesto: str = ''
