@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, JSON
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, JSON, Index
 from sqlalchemy.orm import declarative_base, relationship
 
 
@@ -27,12 +27,17 @@ class Simulacion(Base):
 
     id = Column(Integer, primary_key=True)
     coleccion_id = Column(Integer, ForeignKey('coleccion_simulaciones.id'), nullable=False)
+    hora = Column(String)
+
+    __table_args__ = (
+        Index("idx_simulacion_coleccion_hora_id", "coleccion_id", "hora", "id"),
+    )
 
     coleccion = relationship(
         "ColeccionSimulaciones",
         back_populates="simulaciones"
     )
-    hora = Column(String)
+
     evento = Column(String)
     rnd_llegada = Column(Float)
     tiempo_entre_llegadas = Column(String)

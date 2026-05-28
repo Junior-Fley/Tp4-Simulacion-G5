@@ -31,3 +31,5 @@ if __name__ == "__main__":
 
     print(float_a_hora(0))
     print(float_a_hora(1065.6659010842052))
+
+    print("12:00:05" > "12:00:09")

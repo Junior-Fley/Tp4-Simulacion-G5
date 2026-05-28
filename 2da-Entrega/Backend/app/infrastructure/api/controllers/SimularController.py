@@ -86,6 +86,25 @@ def listar_filas(sim_id: int, page: int = Query(1, ge=1), size: int = Query(20, 
 
     return SimularResponse(items=items_dto, page=page, size=size, total=total, total_pages=total_pages)
 
+
+@router.get("/simulaciones/filtro", response_model=list[SimulacionItem])
+def listar_filas_filtradas(
+    sim_id: int = Query(..., ge=1),
+    hora_min: str = Query(...),
+    max_filas: int = Query(..., ge=1),
+):
+    query_simular = QuerySimulaciones(uow_factory)
+    items = query_simular.get_simulaciones_filtradas(sim_id, hora_min, max_filas)
+
+    items_dto: List[SimulacionItem] = []
+
+    for simulacion in items:
+        simulacion_item = SimulacionItem.from_domain(simulacion)
+        items_dto.append(simulacion_item)
+
+    return items_dto
+
+
 @router.get("/simulaciones/{sim_id}/stats", response_model=SimulacionStatsResponse)
 def calcular_stats(sim_id: int):
 

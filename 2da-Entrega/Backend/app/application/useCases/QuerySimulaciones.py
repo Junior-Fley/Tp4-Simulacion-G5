@@ -24,3 +24,19 @@ class QuerySimulaciones:
                 simulaciones.append(simu_domain)
 
             return simulaciones, total
+
+    def get_simulaciones_filtradas(self, simulacion_id: int, hora_min: str, max_filas: int) -> List[Simulacion]:
+        with self.uow_factory() as uow:
+            simulaciones_orm = uow.simu_repo.obtener_filas_simulacion_filtradas(
+                simulacion_id,
+                hora_min,
+                max_filas,
+            )
+
+            simulaciones: List[Simulacion] = []
+
+            for simulacion in simulaciones_orm:
+                simu_domain = self.simu_mapper.convert_orm_to_domain(simulacion)
+                simulaciones.append(simu_domain)
+
+            return simulaciones
