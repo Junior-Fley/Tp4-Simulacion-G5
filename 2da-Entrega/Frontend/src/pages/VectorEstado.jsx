@@ -3,22 +3,28 @@ import { Button, Modal, Table } from "react-bootstrap";
 import simulacionService from "../service/simulacion.service";
 import "../App.css";
 
-const TAMANIO_PAGINA = 50;
 export const VectorEstado = ({ simId, onSimIdChange }) => {
+  const TAMANIO_PAGINA = 50;
+  const MAX_PAGE_SIZE = 100;
+
   const [filasBase, setFilasBase] = useState([]);
   const [filas, setFilas] = useState([]);
   const [simulaciones, setSimulaciones] = useState([]);
 
   const [page, setPage] = useState(1);
-  const [size, setSize] = useState(50);
   const [totalPages, setTotalPages] = useState(0);
   const [ultimaFila, setUltimaFila] = useState(null);
   const [stats, setStats] = useState(null);
   const [detalleFila, setDetalleFila] = useState(null);
   const [detalleAbierto, setDetalleAbierto] = useState(false);
   
-  const [filtroP, setFiltroP] = useState("");
+  const [filtroP, setFiltroP] = useState(String(TAMANIO_PAGINA));
   const [filtroQ, setFiltroQ] = useState("");
+
+  const pageSize = Math.min(
+    MAX_PAGE_SIZE,
+    Math.max(1, Number(filtroP) || TAMANIO_PAGINA)
+  );
 
   const simIdNormalizado = simId == null ? "" : String(simId);
   const simIdEnLista =
@@ -206,21 +212,9 @@ cargarFilas();
   }, [simId]);
 
   useEffect(() => {
-    const sinFiltros = filtroP === "" && filtroQ === "";
-
     if (!Array.isArray(filasBase)) {
       setFilas([]);
       setTotalPages(0);
-      return;
-    }
-
-    if (sinFiltros) {
-      const inicio = (page - 1) * TAMANIO_PAGINA;
-      const fin = inicio + TAMANIO_PAGINA;
-      setFilas(filasBase.slice(inicio, fin));
-      setTotalPages(
-        filasBase.length > 0 ? Math.ceil(filasBase.length / TAMANIO_PAGINA) : 0
-      );
       return;
     }
 
@@ -247,21 +241,21 @@ cargarFilas();
       }
     }
 
-    const cantidad =
-      filtroP === "" ? filasBase.length - inicio : Math.max(1, Number(filtroP));
+    const filasDesdeHora = filasBase.slice(inicio);
+    const total = filasDesdeHora.length;
+    const paginas = total > 0 ? Math.ceil(total / pageSize) : 0;
 
-    const visibles = filasBase.slice(inicio, inicio + cantidad);
-
-    const ultimaVisible = visibles[visibles.length - 1];
-    const ultimaGeneral = filasBase[filasBase.length - 1];
-
-    if (ultimaGeneral && ultimaVisible !== ultimaGeneral) {
-      visibles.push(ultimaGeneral);
+    if (page > paginas && paginas > 0) {
+      setPage(paginas);
+      return;
     }
 
-    setFilas(visibles);
-    setTotalPages(1);
-  }, [filasBase, page, filtroP, filtroQ]);
+    const inicioPagina = (page - 1) * pageSize;
+    const finPagina = inicioPagina + pageSize;
+
+    setFilas(filasDesdeHora.slice(inicioPagina, finPagina));
+    setTotalPages(paginas);
+  }, [filasBase, page, pageSize, filtroQ]);
 
   useEffect(() => {
     const cargarStats = async () => {
@@ -409,14 +403,6 @@ cargarFilas();
             <tbody>
               {filas.map((fila, index) => (
                 <React.Fragment key={index}>
-                  {index === filas.length - 1 && filas.length > 0 && (
-                    <tr className="table-secondary">
-                      <td colSpan={21} className="text-center fw-bold">
-                        Última fila de la simulación
-                      </td>
-                    </tr>
-                  )}
-
                   {normalizarEvento(fila.evento) === "Abre_Tienda" && (
                     <tr className="table-primary">
                       <td
@@ -470,6 +456,50 @@ cargarFilas();
 
                 </React.Fragment>
               ))}
+              
+  {ultimaFila && (
+    <>
+      <tr className="table-secondary">
+        <td colSpan={21} className="text-center fw-bold">
+          Última fila de la simulación
+        </td>
+      </tr>
+
+      <tr className="table-warning">
+        <td>{ultimaFila.hora}</td>
+        <td>{ultimaFila.evento}</td>
+        <td>{mostrarValorVacioNAda(ultimaFila.rnd_llegada)}</td>
+        <td>{ultimaFila.tiempo_entre_llegadas}</td>
+        <td>{ultimaFila.proxima_llegada}</td>
+        <td>{ultimaFila.estado_tecnico}</td>
+        <td>{mostrarValorVacioNAda(ultimaFila.rnd_duracion_atencion)}</td>
+        <td>{ultimaFila.duracion_atencion}</td>
+        <td>{ultimaFila.proximo_fin_atencion}</td>
+        <td>{mostrarValorVacioNAda(ultimaFila.rnd_presupuesto)}</td>
+        <td>{ultimaFila.presupuesto}</td>
+        <td>{mostrarValorVacioNAda(ultimaFila.rnd_deja_equipo)}</td>
+        <td>
+          {ultimaFila.deja_equipo == null ? "" : ultimaFila.deja_equipo ? "Sí" : "No"}
+        </td>
+        <td>{mostrarValorVacioNAda(ultimaFila.rnd_duracion_reparacion)}</td>
+        <td>{ultimaFila.duracion_reparacion}</td>
+        <td>{ultimaFila.fila_atencion_cantidad}</td>
+        <td>{ultimaFila.fila_equipos_cantidad}</td>
+        <td>{ultimaFila.tiempo_de_atencion_total}</td>
+        <td>{ultimaFila.tiempo_de_reparacion_total}</td>
+        <td>{ultimaFila.clientes_no_atendidos}</td>
+        <td>
+          <Button
+            variant="outline-primary"
+            size="sm"
+            onClick={() => abrirDetalle(ultimaFila)}
+          >
+            Ver
+          </Button>
+        </td>
+      </tr>
+    </>
+  )}
             </tbody>
 
           </Table>
@@ -488,6 +518,7 @@ cargarFilas();
             <input
               type="number"
               min="1"
+              max="100" 
               className="form-control tabla-size"
               placeholder=""
               value={filtroP}
@@ -530,26 +561,20 @@ cargarFilas();
         <div className="d-flex align-items-center justify-content-center gap-3">
           <button
             className="btn btn-secondary"
-            onClick={() => setPage(page - 1)}
-            disabled={page === 1 || vistaFiltrada}
+            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+            disabled={page === 1}
           >
             Anterior
           </button>
 
           <span>
-            {vistaFiltrada ? (
-              "Vista filtrada"
-            ) : (
-              <>
-                Página {page} {totalPages > 0 ? `de ${totalPages}` : ""}
-              </>
-            )}
+            Página {page} {totalPages > 0 ? `de ${totalPages}` : ""}
           </span>
 
           <button
             className="btn btn-secondary"
-            onClick={() => setPage(page + 1)}
-            disabled={(totalPages > 0 && page >= totalPages) || vistaFiltrada}
+            onClick={() => setPage((prev) => prev + 1)}
+            disabled={totalPages > 0 && page >= totalPages}
           >
             Siguiente
           </button>
