@@ -157,7 +157,7 @@ const FormularioVar = ({ onSimulacionCreada }) => {
       <div className="sim-row">
 
         {campo(
-          "Tiempo de Simulación",
+          "Tiempo de Simulación (min)",
           "x_tiempo",
           "number",
           {
