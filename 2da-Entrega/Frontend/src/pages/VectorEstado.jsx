@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Button, Modal, Table } from "react-bootstrap";
 import simulacionService from "../service/simulacion.service";
 import "../App.css";
 
-export const VectorEstado = ({ simId, onSimIdChange }) => {
-  const TAMANIO_PAGINA = 50;
-  const MAX_PAGE_SIZE = 100000;
+const TAMANIO_PAGINA = 100;
+const TAMANIO_PAGINA_MAXIMO = 1000;
 
+export const VectorEstado = ({ simId, onSimIdChange }) => {
   const [filasBase, setFilasBase] = useState([]);
-  const [filas, setFilas] = useState([]);
+  const [filasPage, setFilasPage] = useState([]);
   const [simulaciones, setSimulaciones] = useState([]);
 
   const [page, setPage] = useState(1);
@@ -17,14 +17,11 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
   const [stats, setStats] = useState(null);
   const [detalleFila, setDetalleFila] = useState(null);
   const [detalleAbierto, setDetalleAbierto] = useState(false);
-  
-  const [filtroP, setFiltroP] = useState(String(TAMANIO_PAGINA));
+
+  const [filtroP, setFiltroP] = useState("");
   const [filtroQ, setFiltroQ] = useState("");
 
-  const pageSize = Math.min(
-    MAX_PAGE_SIZE,
-    Math.max(1, Number(filtroP) || TAMANIO_PAGINA)
-  );
+  const vistaFiltrada = filtroQ !== "";
 
   const simIdNormalizado = simId == null ? "" : String(simId);
   const simIdEnLista =
@@ -36,9 +33,11 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
       return "";
     }
 
-    // Evitar mostrar "NaN" si llega algo no numérico en un campo esperado como número.
     const num = typeof valor === "number" ? valor : Number(valor);
-    if (typeof valor === "number" || (typeof valor === "string" && valor.trim() !== "")) {
+    if (
+      typeof valor === "number" ||
+      (typeof valor === "string" && valor.trim() !== "")
+    ) {
       if (Number.isNaN(num)) return "";
     }
 
@@ -84,21 +83,17 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
   const normalizarEvento = (evento) =>
     typeof evento === "string" ? evento.trim().replace(/\s+/g, "_") : evento;
 
-  const horaASegundos = (valor) => {
-    if (valor === null || valor === undefined || valor === "") return null;
-
-    if (typeof valor === "string" && valor.includes(":")) {
-      const partes = valor.split(":");
-      const horas = Number(partes[0] ?? 0);
-      const minutos = Number(partes[1] ?? 0);
-      const segundos = Number(partes[2] ?? 0);
-      if ([horas, minutos, segundos].some((n) => Number.isNaN(n))) return null;
-      return horas * 3600 + minutos * 60 + segundos;
-    }
-
-    const num = Number(valor);
-    if (!Number.isFinite(num)) return null;
-    return Math.round(num * 60);
+  const mismaFila = (a, b) => {
+    if (!a || !b) return false;
+    return (
+      a.hora === b.hora &&
+      a.evento === b.evento &&
+      a.proxima_llegada === b.proxima_llegada &&
+      a.proximo_fin_atencion === b.proximo_fin_atencion &&
+      a.fila_atencion_cantidad === b.fila_atencion_cantidad &&
+      a.fila_equipos_cantidad === b.fila_equipos_cantidad &&
+      a.clientes_no_atendidos === b.clientes_no_atendidos
+    );
   };
 
   const abrirDetalle = (fila) => {
@@ -116,7 +111,6 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
       try {
         const data = await simulacionService.listarSimulaciones();
 
-        // El backend puede devolver [1,2] o [{id:1}, ...]
         const normalizadas = Array.isArray(data)
           ? data
               .map((s) => {
@@ -137,10 +131,7 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
       } catch (error) {
         console.error("Error al listar simulaciones:", error);
 
-        // Fallback: mantener compatibilidad con el flujo anterior
-        const simsLocal = JSON.parse(
-          localStorage.getItem("simulaciones") || "[]"
-        );
+        const simsLocal = JSON.parse(localStorage.getItem("simulaciones") || "[]");
         const fromLocal = Array.isArray(simsLocal)
           ? simsLocal
               .map((s) => (s?.id != null ? { id: String(s.id) } : null))
@@ -160,106 +151,99 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
   }, [simId]);
 
   useEffect(() => {
-    let cancelado = false;
-
-    const cargarFilas = async () => {
+    const cargarUltimaFila = async () => {
       try {
         if (!simId) {
-          setFilasBase([]);
-          setFilas([]);
           setUltimaFila(null);
-          setTotalPages(0);
           return;
         }
 
-        setFilasBase([]);
-        setFilas([]);
-        setUltimaFila(null);
-        setTotalPages(0);
-        setPage(1);
+        const primera = await simulacionService.obtenerListasFilas(
+          simId,
+          1,
+          TAMANIO_PAGINA
+        );
 
-        // Usar i_iteraciones ingresado por el usuario si está disponible
-        let fetchSize = MAX_PAGE_SIZE;
-        const iterLocal = Number(localStorage.getItem("i_iteraciones"));
-        if (Number.isFinite(iterLocal) && iterLocal > 0) {
-          fetchSize = Math.min(iterLocal, MAX_PAGE_SIZE);
+        const totalPages = Number(primera?.total_pages ?? 0);
+        if (!Number.isFinite(totalPages) || totalPages <= 0) {
+          setUltimaFila(null);
+          return;
         }
 
-        const respuesta = await simulacionService.obtenerListasFilas(simId, 1, fetchSize);
-        if (cancelado) return;
+        const ultima = await simulacionService.obtenerListasFilas(
+          simId,
+          totalPages,
+          TAMANIO_PAGINA
+        );
 
-        const todasLasFilas = Array.isArray(respuesta?.items) ? respuesta.items : [];
-        setUltimaFila(todasLasFilas[todasLasFilas.length - 1] ?? null);
-
-        // Hidratar progresivamente para no volcar todo de golpe
-        const CHUNK_SIZE = 2000;
-        let indice = 0;
-        const hidratar = () => {
-          if (cancelado) return;
-          indice = Math.min(indice + CHUNK_SIZE, todasLasFilas.length);
-          setFilasBase(todasLasFilas.slice(0, indice));
-          if (indice < todasLasFilas.length) requestAnimationFrame(hidratar);
-        };
-        requestAnimationFrame(hidratar);
+        const items = Array.isArray(ultima?.items) ? ultima.items : [];
+        setUltimaFila(items[items.length - 1] ?? null);
       } catch (error) {
-        if (cancelado) return;
-        console.error("Error al obtener filas:", error);
-        setFilasBase([]);
-        setFilas([]);
+        console.error("Error al obtener última fila:", error);
         setUltimaFila(null);
-        setTotalPages(0);
       }
     };
 
-    cargarFilas();
-    return () => { cancelado = true; };
+    cargarUltimaFila();
   }, [simId]);
 
   useEffect(() => {
-    if (!Array.isArray(filasBase)) {
-      setFilas([]);
-      setTotalPages(0);
-      return;
-    }
+    const cargarFilasVista = async () => {
+      try {
+        if (!simId) {
+          setFilasBase([]);
+          setFilasPage([]);
+          setTotalPages(0);
+          setPage(1);
+          return;
+        }
 
-    let inicio = 0;
+        const sizeRaw = Number.parseInt(filtroP, 10);
+        const sizeSinClamp = Number.isFinite(sizeRaw) && sizeRaw > 0 ? sizeRaw : TAMANIO_PAGINA;
+        const size = Math.min(sizeSinClamp, TAMANIO_PAGINA_MAXIMO);
 
-    if (filtroQ !== "") {
-      const horaObjetivo = horaASegundos(filtroQ);
+        if (vistaFiltrada) {
+          const rawHora = filtroQ && String(filtroQ).trim() !== "" ? String(filtroQ) : "00:00:00";
+          const horaMin = rawHora.length === 5 ? `${rawHora}:00` : rawHora;
 
-      if (horaObjetivo === null) {
-        setFilas([]);
+          const data = await simulacionService.listarFilasFiltradas(simId, horaMin, page, size);
+          const itemsPagina = Array.isArray(data?.items)
+            ? data.items
+            : Array.isArray(data)
+            ? data
+            : [];
+
+          const total = Number(data?.total_pages ?? 0);
+
+          setFilasBase(itemsPagina);
+          setFilasPage([]);
+          setTotalPages(Number.isFinite(total) ? total : 0);
+          return;
+        }
+
+        const respuesta = await simulacionService.obtenerListasFilas(
+          simId,
+          page,
+          size
+        );
+
+        const itemsPagina = Array.isArray(respuesta?.items) ? respuesta.items : [];
+        const total = Number(respuesta?.total_pages ?? 0);
+
+        setFilasBase([]);
+        setFilasPage(itemsPagina);
+        setTotalPages(Number.isFinite(total) ? total : 0);
+      } catch (error) {
+        console.error("Error al obtener filas:", error);
+        setFilasBase([]);
+        setFilasPage([]);
         setTotalPages(0);
-        return;
+        setPage(1);
       }
+    };
 
-      inicio = filasBase.findIndex((fila) => {
-        const horaFila = horaASegundos(fila.hora);
-        return horaFila !== null && horaFila >= horaObjetivo;
-      });
-
-      if (inicio === -1) {
-        setFilas([]);
-        setTotalPages(0);
-        return;
-      }
-    }
-
-    const filasDesdeHora = filasBase.slice(inicio);
-    const total = filasDesdeHora.length;
-    const paginas = total > 0 ? Math.ceil(total / pageSize) : 0;
-
-    if (page > paginas && paginas > 0) {
-      setPage(paginas);
-      return;
-    }
-
-    const inicioPagina = (page - 1) * pageSize;
-    const finPagina = inicioPagina + pageSize;
-
-    setFilas(filasDesdeHora.slice(inicioPagina, finPagina));
-    setTotalPages(paginas);
-  }, [filasBase, page, pageSize, filtroQ]);
+    cargarFilasVista();
+  }, [simId, page, vistaFiltrada, filtroP, filtroQ]);
 
   useEffect(() => {
     const cargarStats = async () => {
@@ -279,8 +263,75 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
 
     cargarStats();
   }, [simId]);
-  
-  const vistaFiltrada = filtroP !== "" || filtroQ !== "";
+
+  const filas = useMemo(() => {
+    return vistaFiltrada ? (Array.isArray(filasBase) ? filasBase : []) : filasPage;
+  }, [filasBase, filasPage, vistaFiltrada]);
+
+  const necesitaSeparadorInicioVista = false;
+
+  const renderFila = (fila, key, prevFila, esUltimaFilaSimulacion) => {
+
+    const eventoNormalizado = normalizarEvento(fila?.evento);
+    const esInicioPorEvento = eventoNormalizado === "Abre_Tienda";
+
+    const esInicioDia = esInicioPorEvento;
+
+    return (
+      <React.Fragment key={key}>
+        {esUltimaFilaSimulacion && (
+          <tr className="table-secondary">
+            <td colSpan={21} className="text-center fw-bold">
+              Última fila de la simulación
+            </td>
+          </tr>
+        )}
+
+        {esInicioDia && (
+          <tr className="table-primary">
+            <td colSpan={21} className="text-center fw-bold">
+              Inicio Nuevo Día de la Simulación
+            </td>
+          </tr>
+        )}
+
+        <tr>
+          <td>{fila.hora}</td>
+          <td>{fila.evento}</td>
+          <td>{mostrarValorVacioNAda(fila.rnd_llegada)}</td>
+          <td>{fila.tiempo_entre_llegadas}</td>
+          <td>{fila.proxima_llegada}</td>
+          <td>{fila.estado_tecnico}</td>
+          <td>{mostrarValorVacioNAda(fila.rnd_duracion_atencion)}</td>
+          <td>{fila.duracion_atencion}</td>
+          <td>{fila.proximo_fin_atencion}</td>
+          <td>{mostrarValorVacioNAda(fila.rnd_presupuesto)}</td>
+          <td>{fila.presupuesto}</td>
+          <td>{mostrarValorVacioNAda(fila.rnd_deja_equipo)}</td>
+          <td>{fila.deja_equipo == null ? "" : fila.deja_equipo ? "Sí" : "No"}</td>
+          <td>{mostrarValorVacioNAda(fila.rnd_duracion_reparacion)}</td>
+          <td>{fila.duracion_reparacion}</td>
+          <td>{fila.fila_atencion_cantidad}</td>
+          <td>{fila.fila_equipos_cantidad}</td>
+          <td>{fila.tiempo_de_atencion_total}</td>
+          <td>{fila.tiempo_de_reparacion_total}</td>
+          <td>{fila.clientes_no_atendidos}</td>
+          <td>
+            <Button variant="outline-primary" size="sm" onClick={() => abrirDetalle(fila)}>
+              Ver
+            </Button>
+          </td>
+        </tr>
+      </React.Fragment>
+    );
+  };
+
+  const ultimaFilaNoIncluidaEnVista =
+    ultimaFila != null
+      ? vistaFiltrada
+        ? Array.isArray(filas) && !filas.some((f) => mismaFila(f, ultimaFila))
+        : page < totalPages
+      : false;
 
   return (
     <div className="tabla-page">
@@ -405,105 +456,32 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
             </thead>
 
             <tbody>
-              {filas.map((fila, index) => (
-                <React.Fragment key={index}>
-                  {normalizarEvento(fila.evento) === "Abre_Tienda" && (
-                    <tr className="table-primary">
-                      <td
-                        colSpan={
-                          21
-                        }
-                        className="text-center fw-bold"
-                      >
-                        Inicio Nuevo Día de la Simulación
-                      </td>
-                    </tr>
-                  )}
+              {necesitaSeparadorInicioVista && (
+                <tr className="table-primary">
+                  <td colSpan={21} className="text-center fw-bold">
+                    Inicio Nuevo Día de la Simulación
+                  </td>
+                </tr>
+              )}
 
-                  <tr>
-                    <td>{fila.hora}</td>
-                    <td>{fila.evento}</td>
-                    <td>{mostrarValorVacioNAda(fila.rnd_llegada)}</td>
-                    <td>{fila.tiempo_entre_llegadas}</td>
-                    <td>{fila.proxima_llegada}</td>
-                    <td>{fila.estado_tecnico}</td>
-                    <td>{mostrarValorVacioNAda(fila.rnd_duracion_atencion)}</td>
-                    <td>{fila.duracion_atencion}</td>
-                    <td>{fila.proximo_fin_atencion}</td>
-                    <td>{mostrarValorVacioNAda(fila.rnd_presupuesto)}</td>
-                    <td>{fila.presupuesto}</td>
-                    <td>{mostrarValorVacioNAda(fila.rnd_deja_equipo)}</td>
-                    <td>
-                      {fila.deja_equipo == null
-                        ? ""
-                        : fila.deja_equipo
-                        ? "Sí"
-                        : "No"}
-                    </td>
-                    <td>{mostrarValorVacioNAda(fila.rnd_duracion_reparacion)}</td>
-                    <td>{fila.duracion_reparacion}</td>
-                    <td>{fila.fila_atencion_cantidad}</td>
-                    <td>{fila.fila_equipos_cantidad}</td>
-                    <td>{fila.tiempo_de_atencion_total}</td>
-                    <td>{fila.tiempo_de_reparacion_total}</td>
-                    <td>{fila.clientes_no_atendidos}</td>
-                    <td>
-                      <Button
-                        variant="outline-primary"
-                        size="sm"
-                        onClick={() => abrirDetalle(fila)}
-                      >
-                        Ver
-                      </Button>
-                    </td>
-                  </tr>
+              {filas.map((fila, index) =>
+                renderFila(
+                  fila,
+                  index,
+                  index > 0 ? filas[index - 1] : null,
+                  vistaFiltrada
+                    ? ultimaFila != null && mismaFila(fila, ultimaFila)
+                    : page === totalPages && index === filas.length - 1
+                )
+              )}
 
-                </React.Fragment>
-              ))}
-              
-  {ultimaFila && (
-    <>
-      <tr className="table-secondary">
-        <td colSpan={21} className="text-center fw-bold">
-          Última fila de la simulación
-        </td>
-      </tr>
-
-      <tr className="table-warning">
-        <td>{ultimaFila.hora}</td>
-        <td>{ultimaFila.evento}</td>
-        <td>{mostrarValorVacioNAda(ultimaFila.rnd_llegada)}</td>
-        <td>{ultimaFila.tiempo_entre_llegadas}</td>
-        <td>{ultimaFila.proxima_llegada}</td>
-        <td>{ultimaFila.estado_tecnico}</td>
-        <td>{mostrarValorVacioNAda(ultimaFila.rnd_duracion_atencion)}</td>
-        <td>{ultimaFila.duracion_atencion}</td>
-        <td>{ultimaFila.proximo_fin_atencion}</td>
-        <td>{mostrarValorVacioNAda(ultimaFila.rnd_presupuesto)}</td>
-        <td>{ultimaFila.presupuesto}</td>
-        <td>{mostrarValorVacioNAda(ultimaFila.rnd_deja_equipo)}</td>
-        <td>
-          {ultimaFila.deja_equipo == null ? "" : ultimaFila.deja_equipo ? "Sí" : "No"}
-        </td>
-        <td>{mostrarValorVacioNAda(ultimaFila.rnd_duracion_reparacion)}</td>
-        <td>{ultimaFila.duracion_reparacion}</td>
-        <td>{ultimaFila.fila_atencion_cantidad}</td>
-        <td>{ultimaFila.fila_equipos_cantidad}</td>
-        <td>{ultimaFila.tiempo_de_atencion_total}</td>
-        <td>{ultimaFila.tiempo_de_reparacion_total}</td>
-        <td>{ultimaFila.clientes_no_atendidos}</td>
-        <td>
-          <Button
-            variant="outline-primary"
-            size="sm"
-            onClick={() => abrirDetalle(ultimaFila)}
-          >
-            Ver
-          </Button>
-        </td>
-      </tr>
-    </>
-  )}
+              {ultimaFilaNoIncluidaEnVista &&
+                renderFila(
+                  ultimaFila,
+                  "ultima-fila",
+                  filas[filas.length - 1] ?? null,
+                  true
+                )}
             </tbody>
 
           </Table>
@@ -517,18 +495,26 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
         <div className="d-flex flex-wrap align-items-end justify-content-center gap-3">
           <div className="d-flex flex-column">
             <label className="form-label mb-1 fw-semibold">
-              Cantidad de Iteraciones:
+              Tamaño de página (filas):
             </label>
             <input
               type="number"
               min="1"
-              max="100000" 
+              max={TAMANIO_PAGINA_MAXIMO}
               className="form-control tabla-size"
               placeholder=""
               value={filtroP}
               onChange={(e) => {
                 setFiltroP(e.target.value);
                 setPage(1);
+              }}
+              onBlur={() => {
+                const raw = Number.parseInt(filtroP, 10);
+                if (!Number.isFinite(raw) || raw <= 0) return;
+                if (raw > TAMANIO_PAGINA_MAXIMO) {
+                  setFiltroP(String(TAMANIO_PAGINA_MAXIMO));
+                  setPage(1);
+                }
               }}
             />
           </div>
@@ -544,6 +530,7 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
               style={{ width: "600px" }}
               value={filtroQ}
               onChange={(e) => {
+                console.log("Nuevo valor:", e.target.value);
                 setFiltroQ(e.target.value);
                 setPage(1);
               }}
@@ -565,7 +552,7 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
         <div className="d-flex align-items-center justify-content-center gap-3">
           <button
             className="btn btn-secondary"
-            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+            onClick={() => setPage(page - 1)}
             disabled={page === 1}
           >
             Anterior
@@ -577,7 +564,7 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
 
           <button
             className="btn btn-secondary"
-            onClick={() => setPage((prev) => prev + 1)}
+            onClick={() => setPage(page + 1)}
             disabled={totalPages > 0 && page >= totalPages}
           >
             Siguiente

@@ -23,6 +23,18 @@ const obtenerListasFilas = async (sim_id, page, size) => {
   return response.data;
 };
 
+const listarFilasFiltradas = async (sim_id, hora_min, page = 1, size = 20) => {
+  const response = await axios.get("/simulaciones/filtros", {
+    params: {
+      sim_id,
+      hora_min,
+      page,
+      size,
+    },
+  });
+  return response.data;
+};
+
 
 
 
@@ -31,5 +43,6 @@ export default {
   iniciarSimulacion,
   listarSimulaciones,
   obtenerStats,
+  listarFilasFiltradas,
 
 };
