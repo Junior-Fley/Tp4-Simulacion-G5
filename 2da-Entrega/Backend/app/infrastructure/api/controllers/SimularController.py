@@ -87,14 +87,21 @@ def listar_filas(sim_id: int, page: int = Query(1, ge=1), size: int = Query(20, 
     return SimularResponse(items=items_dto, page=page, size=size, total=total, total_pages=total_pages)
 
 
-@router.get("/simulaciones/filtro", response_model=list[SimulacionItem])
+
+@router.get("/simulaciones/filtros", response_model=SimularResponse)
 def listar_filas_filtradas(
     sim_id: int = Query(..., ge=1),
     hora_min: str = Query(...),
-    max_filas: int = Query(..., ge=1),
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100000),
 ):
     query_simular = QuerySimulaciones(uow_factory)
-    items = query_simular.get_simulaciones_filtradas(sim_id, hora_min, max_filas)
+    items, total = query_simular.get_simulaciones_filtradas(sim_id, hora_min, page, size)
+
+    if total == 0:
+        raise HTTPException(status_code=404, detail=f"Simulación id: {sim_id} no encontrada")
+
+    total_pages = (total + size - 1) // size if total > 0 else 0
 
     items_dto: List[SimulacionItem] = []
 
@@ -102,7 +109,7 @@ def listar_filas_filtradas(
         simulacion_item = SimulacionItem.from_domain(simulacion)
         items_dto.append(simulacion_item)
 
-    return items_dto
+    return SimularResponse(items=items_dto, page=page, size=size, total=total, total_pages=total_pages)
 
 
 @router.get("/simulaciones/{sim_id}/stats", response_model=SimulacionStatsResponse)

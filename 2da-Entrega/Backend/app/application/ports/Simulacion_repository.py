@@ -18,7 +18,8 @@ class ISimulacionRepository(ABC):
                            ) -> None:
         pass
 
-    def obtener_filas_simulacion_filtradas(self, coleccion_id: int, hora_min: str, max_filas: int):
+    @abstractmethod
+    def obtener_filas_simulacion_filtradas(self, coleccion_id: int, hora_min: str, page: int, size: int):
         pass
 
     def obtener_filas_simulacion(self, coleccion_id: int, page: int, size: int):

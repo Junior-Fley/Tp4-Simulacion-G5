@@ -46,17 +46,17 @@ class SimulacionRepositoryImpl(ISimulacionRepository):
         items = query.order_by(SimulacionORM.id).offset((page - 1) * size).limit(size).all()
         return items, total
 
-    def obtener_filas_simulacion_filtradas(self, coleccion_id: int, hora_min: str, max_filas: int):
-        return (
+    def obtener_filas_simulacion_filtradas(self, coleccion_id: int, hora_min: str, page: int, size: int):
+        query = (
             self.session.query(SimulacionORM)
             .filter(
                 SimulacionORM.coleccion_id == coleccion_id,
                 SimulacionORM.hora > hora_min,
             )
-            .order_by(SimulacionORM.id)
-            .limit(max_filas)
-            .all()
         )
+        total = query.count()
+        items = query.order_by(SimulacionORM.id).offset((page - 1) * size).limit(size).all()
+        return items, total
 
     def obtener_ultima_fila_simulacion(self, coleccion_id: int):
         return (
