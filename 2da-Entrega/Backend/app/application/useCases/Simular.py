@@ -65,6 +65,7 @@ class Simular:
 
         self.contador_clientes: int = 0
         self.contador_equipos: int = 0
+        self.contador_reparaciones: int = 0
         self.acum_tiempo_equipos: float = 0
 
     def abrir_tienda(self):
@@ -324,7 +325,7 @@ class Simular:
             if self.repo_override is not None:
                 uow.simu_repo = self.repo_override
             uow.simu_repo.guardar_filas_bulk(self.filas_a_guardar)
-            uow.acum_repo.guardar_acumulador(self.id_coleccion, self.acum_tiempo_equipos, self.contador_equipos)
+            uow.acum_repo.guardar_acumulador(self.id_coleccion, self.acum_tiempo_equipos, self.contador_reparaciones)
             self.filas_a_guardar = []
 
         return self.id_coleccion
