@@ -67,7 +67,7 @@ def listar_colecciones():
 
 
 @router.get("/simulaciones/{sim_id}/filas", response_model=SimularResponse)
-def listar_filas(sim_id: int, page: int = Query(1, ge=1), size: int = Query(20, ge=1, le=500)):
+def listar_filas(sim_id: int, page: int = Query(1, ge=1), size: int = Query(20, ge=1, le=100000)):
 
     query_simular = QuerySimulaciones(uow_factory)
     items, total = query_simular.get_simulaciones(sim_id, page, size)

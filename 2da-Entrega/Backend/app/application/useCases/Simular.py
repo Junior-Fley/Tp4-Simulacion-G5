@@ -282,7 +282,7 @@ class Simular:
         for i in range(self.i_iteraciones):
 
             #Hay que cortar el bucle si se llegó a la hora de cierre x_tiempo
-            if self.hora_actual < self.x_tiempo:
+            if self.hora_actual < 600 + self.x_tiempo:
                 # region guardado en bulk de filas
                 # si mi cantidad de filas en mi vector de filas a guardar es mayor o igual al tamaño definido para commit
                 # a la bdd, entonces guardo las filas y limpio el vector de filas a guardar.
