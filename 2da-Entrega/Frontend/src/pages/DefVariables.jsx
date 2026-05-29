@@ -64,9 +64,9 @@ const FormularioVar = ({ onSimulacionCreada }) => {
 
   const nuevoId = response?.id_simulacion;
 
-  // guardar id
   if (nuevoId != null) {
     localStorage.setItem("simId", String(nuevoId));
+    localStorage.setItem("i_iteraciones", String(parsed.i_iteraciones));
   }
 
   setMensaje("Simulación generada correctamente");

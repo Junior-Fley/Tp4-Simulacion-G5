@@ -5,7 +5,7 @@ import "../App.css";
 
 export const VectorEstado = ({ simId, onSimIdChange }) => {
   const TAMANIO_PAGINA = 50;
-  const MAX_PAGE_SIZE = 100;
+  const MAX_PAGE_SIZE = 100000;
 
   const [filasBase, setFilasBase] = useState([]);
   const [filas, setFilas] = useState([]);
@@ -160,6 +160,8 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
   }, [simId]);
 
   useEffect(() => {
+    let cancelado = false;
+
     const cargarFilas = async () => {
       try {
         if (!simId) {
@@ -170,36 +172,37 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
           return;
         }
 
-        const primeraRespuesta = await simulacionService.obtenerListasFilas(
-          simId,
-          1,
-          TAMANIO_PAGINA
-        );
+        setFilasBase([]);
+        setFilas([]);
+        setUltimaFila(null);
+        setTotalPages(0);
+        setPage(1);
 
-        const totalPagesRespuesta = Number(primeraRespuesta?.total_pages ?? 0);
-        const itemsIniciales = Array.isArray(primeraRespuesta?.items)
-          ? primeraRespuesta.items
-          : [];
-
-        let acumuladas = [...itemsIniciales];
-
-        for (let pagina = 2; pagina <= totalPagesRespuesta; pagina += 1) {
-          const respuestaPagina = await simulacionService.obtenerListasFilas(
-            simId,
-            pagina,
-            TAMANIO_PAGINA
-          );
-
-          const itemsPagina = Array.isArray(respuestaPagina?.items)
-            ? respuestaPagina.items
-            : [];
-          acumuladas = acumuladas.concat(itemsPagina);
+        // Usar i_iteraciones ingresado por el usuario si está disponible
+        let fetchSize = MAX_PAGE_SIZE;
+        const iterLocal = Number(localStorage.getItem("i_iteraciones"));
+        if (Number.isFinite(iterLocal) && iterLocal > 0) {
+          fetchSize = Math.min(iterLocal, MAX_PAGE_SIZE);
         }
 
-        setFilasBase(acumuladas);
-        setUltimaFila(acumuladas[acumuladas.length - 1] ?? null);
-        setPage(1);
+        const respuesta = await simulacionService.obtenerListasFilas(simId, 1, fetchSize);
+        if (cancelado) return;
+
+        const todasLasFilas = Array.isArray(respuesta?.items) ? respuesta.items : [];
+        setUltimaFila(todasLasFilas[todasLasFilas.length - 1] ?? null);
+
+        // Hidratar progresivamente para no volcar todo de golpe
+        const CHUNK_SIZE = 2000;
+        let indice = 0;
+        const hidratar = () => {
+          if (cancelado) return;
+          indice = Math.min(indice + CHUNK_SIZE, todasLasFilas.length);
+          setFilasBase(todasLasFilas.slice(0, indice));
+          if (indice < todasLasFilas.length) requestAnimationFrame(hidratar);
+        };
+        requestAnimationFrame(hidratar);
       } catch (error) {
+        if (cancelado) return;
         console.error("Error al obtener filas:", error);
         setFilasBase([]);
         setFilas([]);
@@ -208,7 +211,8 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
       }
     };
 
-cargarFilas();
+    cargarFilas();
+    return () => { cancelado = true; };
   }, [simId]);
 
   useEffect(() => {
@@ -518,7 +522,7 @@ cargarFilas();
             <input
               type="number"
               min="1"
-              max="100" 
+              max="100000" 
               className="form-control tabla-size"
               placeholder=""
               value={filtroP}
