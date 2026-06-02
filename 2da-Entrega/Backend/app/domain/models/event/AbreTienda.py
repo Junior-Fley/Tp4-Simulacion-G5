@@ -18,6 +18,7 @@ class AbreTienda(Evento):
 
     def ejecutar_accion(self, simulacion: Simular):
         # dejar todas las filas como están al principio de una nueva simulación
+        simulacion.proximo_evento_2 = None
         simulacion.hora_proximo_fin_atencion = 0
         simulacion.hora_proximo_fin_reparacion = None
         simulacion.tiempo_hasta_reparacion = 0

@@ -19,6 +19,8 @@ class LlegaCliente(Evento):
     def ejecutar_accion(self, simulacion: Simular):
 
         #todo revisar
+        simulacion.proximo_evento_2 = None
+
 
         if simulacion.tecnico.estado == EstadoTecnico.ATENDIENDO_CLIENTE:
             simulacion.tecnico.acum_atencion += simulacion.hora_proxima_llegada - simulacion.hora_actual
@@ -73,6 +75,11 @@ class LlegaCliente(Evento):
                 #si es así, entonces lo termino de atender completamente a puertas cerradas si hace falta
                 from app.domain.models.event.FinAtencion import FinAtencion
                 simulacion.proximo_evento = FinAtencion()
+                # si esto ocurre después del cierre, primero cierro
+                if simulacion.hora_proximo_fin_atencion > simulacion.hora_cierre:
+                    from app.domain.models.event.CierraTienda import CierraTienda
+                    simulacion.proximo_evento = CierraTienda()
+                    simulacion.proximo_evento_2 = FinAtencion()
             # si no hay clientes en la cola, pero si hay equipos para reparar en la cola, entonces reparo.
             elif simulacion.cola_equipos.cantidad() > 0:
                 # Actualizo el estado del técnico
@@ -80,17 +87,35 @@ class LlegaCliente(Evento):
                 self.calcular_tiempo_hasta_reparacion(simulacion)
                 from app.domain.models.event.FinReparacion import FinReparacion
                 simulacion.proximo_evento = FinReparacion()
+                # si esto ocurre después del cierre, primero cierro
+                if simulacion.cola_equipos.primero().tiempo_reparacion_restante is not None:
+                    if simulacion.hora_actual + simulacion.cola_equipos.primero().tiempo_reparacion_restante > simulacion.hora_cierre:
+                        from app.domain.models.event.CierraTienda import CierraTienda
+                        simulacion.proximo_evento = CierraTienda()
+                        simulacion.proximo_evento_2 = FinReparacion()
                 # si no hay clientes ni equipos en las colas, entonces mi técnico se puede ir a casa tranquilo
                 # y la proxima acción será la apertura de la tienda del día siguiente
             else:
                 from app.domain.models.event.AbreTienda import AbreTienda
                 simulacion.tecnico.estado = EstadoTecnico.LIBRE
-                simulacion.proximo_evento = AbreTienda()
+                from app.domain.models.event.CierraTienda import CierraTienda
+                simulacion.proximo_evento = CierraTienda()
+                simulacion.proximo_evento_2 = AbreTienda()
             return
 
 
         if simulacion.hora_proxima_llegada > simulacion.hora_proximo_fin_atencion:
             from app.domain.models.event.FinAtencion import FinAtencion
             simulacion.proximo_evento = FinAtencion()
+            # si esto ocurre después del cierre, primero cierro
+            if simulacion.hora_proximo_fin_atencion > simulacion.hora_cierre:
+                from app.domain.models.event.CierraTienda import CierraTienda
+                simulacion.proximo_evento = CierraTienda()
+                simulacion.proximo_evento_2 = FinAtencion()
         else:
             simulacion.proximo_evento = LlegaCliente()
+            # si esto ocurre después del cierre, primero cierro
+            if simulacion.hora_proxima_llegada > simulacion.hora_cierre:
+                from app.domain.models.event.CierraTienda import CierraTienda
+                simulacion.proximo_evento = CierraTienda()
+                simulacion.proximo_evento_2 = LlegaCliente()

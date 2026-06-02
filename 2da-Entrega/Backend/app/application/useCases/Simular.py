@@ -54,6 +54,7 @@ class Simular:
 
         self.evento: Evento | None = None
         self.proximo_evento: Evento|None = None
+        self.proximo_evento_2: Evento|None = None
         self.tecnico: Tecnico| None = None
         self.cierre: bool = False
         self.cola_equipos: ColaFIFO = ColaEquipos()
@@ -232,6 +233,26 @@ class Simular:
                 self.cola_equipos.serialize()
             ))
 
+    def guarda_fila_cierra_tienda(self):
+        self.filas_a_guardar.append((
+                self.id_coleccion, self.float_a_hora(self.hora_actual),
+                self.evento.nombre,
+                -1,
+                '',
+                self.float_a_hora(self.hora_proxima_llegada),
+                self.tecnico.estado,
+                -1,
+                '', '',
+                -1,
+                '', -1, None,
+                -1,
+                '', self.cola_clientes.cantidad(),
+                 self.cola_equipos.cantidad(),
+                 self.float_a_hora(self.tecnico.acum_atencion),
+                 self.float_a_hora(self.tecnico.acum_reparacion),
+                 self.clientes_no_atendidos,
+                 self.cola_clientes.serialize(), self.cola_equipos.serialize()))
+
     def ejecutar_simulacion(self) -> int:
         # creamos la nueva colección de simulaciones en la bdd
         with self.uow_factory() as uow:
@@ -314,6 +335,8 @@ class Simular:
                         self.guardar_fila_reparacion()
                     case "Abre_Tienda":
                         self.guarda_fila_abre_tienda()
+                    case "Cierra_tienda":
+                        self.guarda_fila_cierra_tienda()
 
                 self.evento = self.proximo_evento
 

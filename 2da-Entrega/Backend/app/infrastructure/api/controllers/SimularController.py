@@ -120,7 +120,7 @@ def calcular_stats(sim_id: int):
     try:
         stats = calcular_estadisticas.calcular_estadisticas()
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     return SimulacionStatsResponse(**stats)
 #TODO CREAR ENDPOINT PARA OBTENER LAS ESTADÍSTICAS DE LOS ACUMULADORES

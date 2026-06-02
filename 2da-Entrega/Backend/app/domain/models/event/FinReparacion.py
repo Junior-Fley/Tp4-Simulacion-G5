@@ -18,6 +18,8 @@ class FinReparacion(Evento):
     def ejecutar_accion(self, simulacion: Simular):
         # Actualizo la hora actual con el tiempo restante de reparacion del equipo
         # que está primero en la cola de equipos
+        simulacion.proximo_evento_2 = None
+
         equipo_reparado = simulacion.cola_equipos.primero()
         simulacion.hora_actual += equipo_reparado.tiempo_reparacion_restante
 
@@ -130,10 +132,20 @@ class FinReparacion(Evento):
                 # comparo si el próximo evento es la llegada de un nuevo cliente o el fin de atención del cliente actual
                 if simulacion.hora_proximo_fin_atencion < simulacion.hora_proxima_llegada:
                     from app.domain.models.event.FinAtencion import FinAtencion
+                    from app.domain.models.event.CierraTienda import CierraTienda
                     simulacion.proximo_evento = FinAtencion()
+                    # si esto ocurre después del cierre, primero cierro
+                    if simulacion.hora_proximo_fin_atencion > simulacion.hora_cierre:
+                        simulacion.proximo_evento = CierraTienda()
+                        simulacion.proximo_evento_2 = FinAtencion()
                 else:
                     from app.domain.models.event.LlegaCliente import LlegaCliente
                     simulacion.proximo_evento = LlegaCliente()
+                    # si esto ocurre después del cierre, primero cierro
+                    if simulacion.hora_proxima_llegada > simulacion.hora_cierre:
+                        from app.domain.models.event.CierraTienda import CierraTienda
+                        simulacion.proximo_evento = CierraTienda()
+                        simulacion.proximo_evento_2 = LlegaCliente()
             # este debería ser el camino default, no veo como podría entrar al if de arriba
             # SI TERMINO DE REPARAR Y NO HAY CLIENTES EN LA COLA:
             else:
@@ -180,6 +192,12 @@ class FinReparacion(Evento):
 
 
                         simulacion.proximo_evento = FinReparacion()
+
+                        # si esto ocurre después del cierre, primero cierro
+                        if hora_fin_reparacion > simulacion.hora_cierre:
+                            from app.domain.models.event.CierraTienda import CierraTienda
+                            simulacion.proximo_evento = CierraTienda()
+                            simulacion.proximo_evento_2 = FinReparacion()
                     else:
                         from app.domain.models.event.LlegaCliente import LlegaCliente
 
@@ -217,6 +235,12 @@ class FinReparacion(Evento):
 
                         simulacion.proximo_evento = LlegaCliente()
 
+                        # si esto ocurre después del cierre, primero cierro
+                        if simulacion.hora_proxima_llegada > simulacion.hora_cierre:
+                            from app.domain.models.event.CierraTienda import CierraTienda
+                            simulacion.proximo_evento = CierraTienda()
+                            simulacion.proximo_evento_2 = LlegaCliente()
+
 
                 else:
                     # Si no hay equipos en la cola, entonces quedo libre hasta la llegada de un proximo cliente
@@ -224,3 +248,9 @@ class FinReparacion(Evento):
                     # si no hay clientes ni equipos en la cola, entonces el próximo evento es la llegada de un nuevo cliente
                     from app.domain.models.event.LlegaCliente import LlegaCliente
                     simulacion.proximo_evento = LlegaCliente()
+
+                    # si esto ocurre después del cierre, primero cierro
+                    if simulacion.hora_proxima_llegada > simulacion.hora_cierre:
+                        from app.domain.models.event.CierraTienda import CierraTienda
+                        simulacion.proximo_evento = CierraTienda()
+                        simulacion.proximo_evento_2 = LlegaCliente()
