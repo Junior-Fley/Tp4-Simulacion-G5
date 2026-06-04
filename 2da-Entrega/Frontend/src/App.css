@@ -123,7 +123,7 @@
 /* CARD DE LA TABLA */
 .tabla-card {
   width: 100%;
-  max-width: 1400px;
+  max-width: 2000px;
   background: var(--glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -147,7 +147,7 @@
 /* TABLA VECTOR */
 .tabla-vector {
   text-align: center;
-  min-width: 2800px;
+  width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 0.85rem;
@@ -243,18 +243,7 @@
   z-index: 12;
 }
 
-/* Sombreado elegante para columnas fijas cuando se hace scroll */
-.tabla-vector td:nth-child(2)::after, 
-.tabla-vector th:nth-child(2)::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: -10px;
-  width: 10px;
-  height: 100%;
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.04), transparent);
-  pointer-events: none;
-}
+/* Se quitó el ::after con degradé a transparent porque dejaba “ver atrás” al scrollear */
 
 /* PAGINACIÓN */
 .tabla-pagination {
@@ -441,4 +430,273 @@
   background-color: var(--danger-glow);
   color: var(--danger);
   border-color: var(--danger-border);
+}
+
+/* ==========================
+   COLOREADO SEMÁNTICO TABLA
+   ========================== */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  border: 1px solid var(--slate-200);
+  white-space: nowrap;
+}
+
+.pill--neutral {
+  background: var(--slate-100);
+  color: var(--slate-700);
+}
+
+/* Eventos */
+.pill-evento-abre {
+  background: var(--success-glow);
+  color: var(--success);
+  border-color: var(--success-border);
+}
+
+.pill-evento-cierra {
+  background: var(--danger-glow);
+  color: var(--danger);
+  border-color: var(--danger-border);
+}
+
+.pill-evento-llega {
+  background: var(--primary-glow);
+  color: var(--primary);
+  border-color: var(--slate-200);
+}
+
+.pill-evento-fin-atencion {
+  background: var(--success-glow);
+  color: var(--success);
+  border-color: var(--success-border);
+}
+
+.pill-evento-fin-reparacion {
+  background: var(--warning-glow);
+  color: var(--warning);
+  border-color: var(--warning-border);
+}
+
+/* Estado técnico */
+.pill-tecnico-libre {
+  background: var(--success-glow);
+  color: var(--success);
+  border-color: var(--success-border);
+}
+
+.pill-tecnico-atendiendo {
+  background: var(--primary-glow);
+  color: var(--primary);
+  border-color: var(--slate-200);
+}
+
+.pill-tecnico-reparando {
+  background: var(--warning-glow);
+  color: var(--warning);
+  border-color: var(--warning-border);
+}
+
+/* Presupuesto */
+.pill-presupuesto-normal {
+  background: var(--success-glow);
+  color: var(--success);
+  border-color: var(--success-border);
+}
+
+.pill-presupuesto-elevado {
+  background: var(--danger-glow);
+  color: var(--danger);
+  border-color: var(--danger-border);
+}
+
+/* Deja equipo */
+.pill-deja-si {
+  background: var(--success-glow);
+  color: var(--success);
+  border-color: var(--success-border);
+}
+
+.pill-deja-no {
+  background: var(--danger-glow);
+  color: var(--danger);
+  border-color: var(--danger-border);
+}
+
+/* Conteos de cola */
+.count {
+  font-weight: 800;
+}
+
+.count-ok {
+  color: var(--success);
+}
+
+.count-warn {
+  color: var(--warning);
+}
+
+.count-danger {
+  color: var(--danger);
+}
+
+/* Filas completas */
+.tabla-vector tbody tr.row-abre td {
+  background-color: var(--success-glow) !important;
+  color: var(--success) !important;
+  font-weight: 600;
+}
+
+.tabla-vector tbody tr.row-cierra td {
+  background-color: var(--danger-glow) !important;
+  color: var(--danger) !important;
+  font-weight: 600;
+}
+
+.tabla-vector tbody tr.row-ultima td {
+  background-color: var(--primary-glow) !important;
+  color: var(--primary) !important;
+  font-weight: 700;
+}
+
+/* Asegurar que columnas sticky respeten el coloreado de la fila */
+.tabla-vector tbody tr.row-abre td:nth-child(1),
+.tabla-vector tbody tr.row-abre td:nth-child(2) {
+  background-color: var(--success-glow) !important;
+}
+
+.tabla-vector tbody tr.row-cierra td:nth-child(1),
+.tabla-vector tbody tr.row-cierra td:nth-child(2) {
+  background-color: var(--danger-glow) !important;
+}
+
+.tabla-vector tbody tr.row-ultima td:nth-child(1),
+.tabla-vector tbody tr.row-ultima td:nth-child(2) {
+  background-color: var(--primary-glow) !important;
+}
+
+/*
+  Evitar transparencia perceptible al scrollear (columnas sticky + sombras):
+  reemplaza los "glow" semitransparentes por mezclas opacas usando tokens existentes.
+*/
+@supports (background: color-mix(in srgb, white 80%, black)) {
+  .pill-evento-abre,
+  .pill-tecnico-libre,
+  .pill-presupuesto-normal,
+  .pill-deja-si {
+    background: color-mix(in srgb, white 82%, var(--success) 18%);
+    border-color: color-mix(in srgb, white 72%, var(--success) 28%);
+  }
+
+  .pill-evento-cierra,
+  .pill-presupuesto-elevado,
+  .pill-deja-no {
+    background: color-mix(in srgb, white 82%, var(--danger) 18%);
+    border-color: color-mix(in srgb, white 72%, var(--danger) 28%);
+  }
+
+  .pill-evento-llega,
+  .pill-tecnico-atendiendo {
+    background: color-mix(in srgb, white 82%, var(--primary) 18%);
+    border-color: color-mix(in srgb, white 72%, var(--primary) 28%);
+  }
+
+  .pill-evento-fin-reparacion,
+  .pill-tecnico-reparando {
+    background: color-mix(in srgb, white 82%, var(--warning) 18%);
+    border-color: color-mix(in srgb, white 72%, var(--warning) 28%);
+  }
+
+  .pill-evento-fin-atencion {
+    background: color-mix(in srgb, white 82%, var(--success) 18%);
+    border-color: color-mix(in srgb, white 72%, var(--success) 28%);
+  }
+
+  .tabla-vector tbody tr.row-abre td {
+    background-color: color-mix(in srgb, white 92%, var(--success) 8%) !important;
+  }
+
+  .tabla-vector tbody tr.row-cierra td {
+    background-color: color-mix(in srgb, white 92%, var(--danger) 8%) !important;
+  }
+
+  .tabla-vector tbody tr.row-ultima td {
+    background-color: color-mix(in srgb, white 92%, var(--primary) 8%) !important;
+  }
+
+  .tabla-vector tbody tr.row-abre td:nth-child(1),
+  .tabla-vector tbody tr.row-abre td:nth-child(2) {
+    background-color: color-mix(in srgb, white 92%, var(--success) 8%) !important;
+  }
+
+  .tabla-vector tbody tr.row-cierra td:nth-child(1),
+  .tabla-vector tbody tr.row-cierra td:nth-child(2) {
+    background-color: color-mix(in srgb, white 92%, var(--danger) 8%) !important;
+  }
+
+  .tabla-vector tbody tr.row-ultima td:nth-child(1),
+  .tabla-vector tbody tr.row-ultima td:nth-child(2) {
+    background-color: color-mix(in srgb, white 92%, var(--primary) 8%) !important;
+  }
+}
+
+/* Leyenda */
+.tabla-leyenda {
+  width: 100%;
+  max-width: 2000px;
+  margin-bottom: 12px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--slate-200);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow-premium);
+}
+
+.tabla-leyenda .leyenda-titulo {
+  font-weight: 700;
+  color: var(--slate-900);
+  margin-bottom: 8px;
+}
+
+.tabla-leyenda .leyenda-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  align-items: center;
+}
+
+.tabla-leyenda .leyenda-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--slate-700);
+  margin-right: 4px;
+}
+
+/* Modal detalle */
+.detalle-seccion {
+  margin-bottom: 18px;
+}
+
+.detalle-seccion h6 {
+  font-weight: 800;
+  color: var(--slate-900);
+  margin-bottom: 10px;
+}
+
+.detalle-tabla {
+  margin-bottom: 0;
+}
+
+.detalle-tabla th {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--slate-700);
+  background: var(--slate-100);
 }

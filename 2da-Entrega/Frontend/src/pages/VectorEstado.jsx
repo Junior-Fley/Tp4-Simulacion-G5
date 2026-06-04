@@ -6,6 +6,12 @@ import "../App.css";
 const TAMANIO_PAGINA = 100;
 const TAMANIO_PAGINA_MAXIMO = 1000;
 
+const Pill = ({ className, children, title }) => (
+  <span className={`pill ${className || "pill--neutral"}`} title={title}>
+    {children}
+  </span>
+);
+
 export const VectorEstado = ({ simId, onSimIdChange }) => {
   const [filasBase, setFilasBase] = useState([]);
   const [filasPage, setFilasPage] = useState([]);
@@ -80,8 +86,78 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
     return num.toFixed(2);
   };
 
-  const normalizarEvento = (evento) =>
-    typeof evento === "string" ? evento.trim().replace(/\s+/g, "_") : evento;
+  const normalizarClave = (valor) =>
+    typeof valor === "string"
+      ? valor
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, "_")
+      : "";
+
+  const claseEvento = (evento) => {
+    const key = normalizarClave(evento);
+    if (key === "abre_tienda") return "pill-evento-abre";
+    if (key === "cierra_tienda") return "pill-evento-cierra";
+    if (key === "llega_cliente") return "pill-evento-llega";
+    if (key === "fin_atención" || key === "fin_atencion") return "pill-evento-fin-atencion";
+    if (key === "fin_reparación" || key === "fin_reparacion") return "pill-evento-fin-reparacion";
+    return "pill--neutral";
+  };
+
+  const claseTecnico = (estado) => {
+    const key = normalizarClave(estado);
+    if (key === "libre") return "pill-tecnico-libre";
+    if (key === "atendiendo_cliente" || key === "atendiendo") return "pill-tecnico-atendiendo";
+    if (key === "reparando") return "pill-tecnico-reparando";
+    return "pill--neutral";
+  };
+
+  const clasePresupuesto = (presupuesto) => {
+    const key = normalizarClave(presupuesto);
+    if (key === "normal") return "pill-presupuesto-normal";
+    if (key === "elevado") return "pill-presupuesto-elevado";
+    return "pill--neutral";
+  };
+
+  const claseDejaEquipo = (deja) => {
+    if (deja == null) return "pill--neutral";
+    return deja ? "pill-deja-si" : "pill-deja-no";
+  };
+
+  const claseConteoCola = (valor) => {
+    const num = Number(valor);
+    if (!Number.isFinite(num)) return "count";
+    if (num <= 1) return "count count-ok";
+    if (num <= 3) return "count count-warn";
+    return "count count-danger";
+  };
+
+  const claseFila = (fila, esUltimaFilaSimulacion) => {
+    if (esUltimaFilaSimulacion) return "row-ultima";
+    const key = normalizarClave(fila?.evento);
+    if (key === "abre_tienda") return "row-abre";
+    if (key === "cierra_tienda") return "row-cierra";
+    return "";
+  };
+
+  const claseBadgeEstado = (estado) => {
+    const key = normalizarClave(estado);
+    if (
+      key === "siendo_atendido" ||
+      key === "en_atencion" ||
+      key === "atendiendo" ||
+      key === "atendiendo_cliente"
+    ) {
+      return "pill-tecnico-atendiendo";
+    }
+    if (key === "en_reparacion" || key === "en_reparación" || key === "reparando") {
+      return "pill-tecnico-reparando";
+    }
+    if (key === "reparado" || key === "finalizado" || key === "terminado") {
+      return "pill-tecnico-libre";
+    }
+    return "pill--neutral";
+  };
 
   const mismaFila = (a, b) => {
     if (!a || !b) return false;
@@ -268,51 +344,57 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
     return vistaFiltrada ? (Array.isArray(filasBase) ? filasBase : []) : filasPage;
   }, [filasBase, filasPage, vistaFiltrada]);
 
-  const necesitaSeparadorInicioVista = false;
-
   const renderFila = (fila, key, prevFila, esUltimaFilaSimulacion) => {
-
-    const eventoNormalizado = normalizarEvento(fila?.evento);
-    const esInicioPorEvento = eventoNormalizado === "Abre_Tienda";
-
-    const esInicioDia = esInicioPorEvento;
+    const claseTr = claseFila(fila, esUltimaFilaSimulacion);
 
     return (
       <React.Fragment key={key}>
-        {esUltimaFilaSimulacion && (
-          <tr className="table-secondary">
-            <td colSpan={21} className="text-center fw-bold">
-              Última fila de la simulación
-            </td>
-          </tr>
-        )}
-
-        {esInicioDia && (
-          <tr className="table-primary">
-            <td colSpan={21} className="text-center fw-bold">
-              Inicio Nuevo Día de la Simulación
-            </td>
-          </tr>
-        )}
-
-        <tr>
+        <tr className={claseTr}>
           <td>{fila.hora}</td>
-          <td>{fila.evento}</td>
+          <td>
+            <Pill className={claseEvento(fila.evento)} title={fila.evento}>
+              {fila.evento}
+            </Pill>
+          </td>
           <td>{mostrarValorVacioNAda(fila.rnd_llegada)}</td>
           <td>{fila.tiempo_entre_llegadas}</td>
           <td>{fila.proxima_llegada}</td>
-          <td>{fila.estado_tecnico}</td>
+          <td>
+            <Pill className={claseTecnico(fila.estado_tecnico)}>
+              {fila.estado_tecnico || ""}
+            </Pill>
+          </td>
           <td>{mostrarValorVacioNAda(fila.rnd_duracion_atencion)}</td>
           <td>{fila.duracion_atencion}</td>
           <td>{fila.proximo_fin_atencion}</td>
           <td>{mostrarValorVacioNAda(fila.rnd_presupuesto)}</td>
-          <td>{fila.presupuesto}</td>
+          <td>
+            <Pill className={clasePresupuesto(fila.presupuesto)}>
+              {fila.presupuesto || ""}
+            </Pill>
+          </td>
           <td>{mostrarValorVacioNAda(fila.rnd_deja_equipo)}</td>
-          <td>{fila.deja_equipo == null ? "" : fila.deja_equipo ? "Sí" : "No"}</td>
+          <td>
+            {fila.deja_equipo == null ? (
+              ""
+            ) : (
+              <Pill className={claseDejaEquipo(fila.deja_equipo)}>
+                {fila.deja_equipo ? "Sí" : "No"}
+              </Pill>
+            )}
+          </td>
           <td>{mostrarValorVacioNAda(fila.rnd_duracion_reparacion)}</td>
           <td>{fila.duracion_reparacion}</td>
-          <td>{fila.fila_atencion_cantidad}</td>
-          <td>{fila.fila_equipos_cantidad}</td>
+          <td>
+            <span className={claseConteoCola(fila.fila_atencion_cantidad)}>
+              {fila.fila_atencion_cantidad}
+            </span>
+          </td>
+          <td>
+            <span className={claseConteoCola(fila.fila_equipos_cantidad)}>
+              {fila.fila_equipos_cantidad}
+            </span>
+          </td>
           <td>{fila.tiempo_de_atencion_total}</td>
           <td>{fila.tiempo_de_reparacion_total}</td>
           <td>{fila.clientes_no_atendidos}</td>
@@ -422,6 +504,42 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
         </div>
       </div>
 
+      {/* LEYENDA */}
+      <div className="tabla-leyenda">
+        <div className="leyenda-titulo">Leyenda de coloreado semántico</div>
+        <div className="leyenda-items">
+          <span className="leyenda-label">Eventos:</span>
+          <Pill className="pill-evento-abre">Abre_Tienda</Pill>
+          <Pill className="pill-evento-cierra">Cierra_tienda</Pill>
+          <Pill className="pill-evento-llega">Llega_Cliente</Pill>
+          <Pill className="pill-evento-fin-atencion">Fin_Atención</Pill>
+          <Pill className="pill-evento-fin-reparacion">Fin_Reparación</Pill>
+
+          <span className="leyenda-label ms-2">Técnico:</span>
+          <Pill className="pill-tecnico-libre">libre</Pill>
+          <Pill className="pill-tecnico-atendiendo">atendiendo_cliente</Pill>
+          <Pill className="pill-tecnico-reparando">reparando</Pill>
+
+          <span className="leyenda-label ms-2">Presupuesto:</span>
+          <Pill className="pill-presupuesto-normal">Normal</Pill>
+          <Pill className="pill-presupuesto-elevado">Elevado</Pill>
+
+          <span className="leyenda-label ms-2">¿Deja equipo?:</span>
+          <Pill className="pill-deja-si">Sí</Pill>
+          <Pill className="pill-deja-no">No</Pill>
+
+          <span className="leyenda-label ms-2">Colas:</span>
+          <span className="count count-ok">0–1</span>
+          <span className="count count-warn">2–3</span>
+          <span className="count count-danger">4+</span>
+
+          <span className="leyenda-label ms-2">Fila:</span>
+          <Pill className="pill-evento-abre">Abre (fila verde)</Pill>
+          <Pill className="pill-evento-cierra">Cierra (fila rosa)</Pill>
+          <Pill className="pill-evento-llega">Última (violeta)</Pill>
+        </div>
+      </div>
+
       {/* TABLA */}
       <div className="tabla-card">
 
@@ -456,14 +574,6 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
             </thead>
 
             <tbody>
-              {necesitaSeparadorInicioVista && (
-                <tr className="table-primary">
-                  <td colSpan={21} className="text-center fw-bold">
-                    Inicio Nuevo Día de la Simulación
-                  </td>
-                </tr>
-              )}
-
               {filas.map((fila, index) =>
                 renderFila(
                   fila,
@@ -583,40 +693,67 @@ export const VectorEstado = ({ simId, onSimIdChange }) => {
           <Modal.Title>Detalle de fila</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <div className="mb-3">
+          <div className="detalle-seccion">
             <h6>Clientes</h6>
             {detalleFila?.clientes?.length ? (
-              <ul className="mb-0">
-                {detalleFila.clientes.map((cliente, idx) => (
-                  <li key={cliente.id ?? `cliente-${idx}`}>
-                    Cliente {cliente.id ?? idx + 1} - {cliente.estado ?? ""}
-                  </li>
-                ))}
-              </ul>
+              <Table bordered hover responsive className="detalle-tabla">
+                <thead>
+                  <tr>
+                    <th style={{ width: 120 }}>ID</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {detalleFila.clientes.map((cliente, idx) => (
+                    <tr key={cliente.id ?? `cliente-${idx}`}>
+                      <td>{cliente.id ?? idx + 1}</td>
+                      <td>
+                        <Pill className={claseBadgeEstado(cliente.estado)}>
+                          {cliente.estado ?? ""}
+                        </Pill>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
             ) : (
               <span>Sin clientes</span>
             )}
           </div>
-          <div>
+
+          <div className="detalle-seccion">
             <h6>Equipos</h6>
             {detalleFila?.equipos?.length ? (
-              <ul className="mb-0">
-                {detalleFila.equipos.map((equipo, idx) => (
-                  <li key={equipo.id ?? `equipo-${idx}`}>
-                    Equipo {equipo.id ?? idx + 1} - {equipo.estado ?? ""}
-                    {equipo.hora_dejado
-                      ? ` - Hora dejado: ${formatoHoraAmPm(equipo.hora_dejado)}`
-                      : ""}
-                    {equipo.hora_fin
-                      ? ` - Hora Fin: ${formatoHoraAmPm(equipo.hora_fin)}`
-                      : ""}
-                    {(() => {
-                      const t = formatoTiempoEquipo(equipo.tiempo);
-                      return t ? ` - Tiempo: ${t} (hh:mm:ss)` : "";
-                    })()}
-                  </li>
-                ))}
-              </ul>
+              <Table bordered hover responsive className="detalle-tabla">
+                <thead>
+                  <tr>
+                    <th style={{ width: 120 }}>ID</th>
+                    <th style={{ width: 220 }}>Estado</th>
+                    <th>Hora dejado</th>
+                    <th>Hora fin</th>
+                    <th>Tiempo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {detalleFila.equipos.map((equipo, idx) => (
+                    <tr key={equipo.id ?? `equipo-${idx}`}>
+                      <td>{equipo.id ?? idx + 1}</td>
+                      <td>
+                        <Pill className={claseBadgeEstado(equipo.estado)}>
+                          {equipo.estado ?? ""}
+                        </Pill>
+                      </td>
+                      <td>
+                        {equipo.hora_dejado
+                          ? formatoHoraAmPm(equipo.hora_dejado)
+                          : ""}
+                      </td>
+                      <td>{equipo.hora_fin ? formatoHoraAmPm(equipo.hora_fin) : ""}</td>
+                      <td>{formatoTiempoEquipo(equipo.tiempo)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
             ) : (
               <span>Sin equipos</span>
             )}
